@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <!-- Load Tailwind CSS via CDN -->
+    <title>Acadify - School Grading System</title>
+</head>
+<body>
+    <div class="cursor-light"></div>
+    <div class="light"></div>
+
+    <nav class="navbar">
+        <div class="logo">
+            <svg class="footer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L15 22h-5.25v-5zm-5.25 0L0 22h5.25v-5zM12 12V6m-3 6h6m-3 0V6m-3 0a3 3 0 106 0m-6 0h6m-3 0a3 3 0 106 0m-6 0V6"></path></svg>
+            
+            Acadify
+
+            {# <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#about">About Us</a></li>
+            </ul> #}
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-signin">Student</button>
+            <button class="btn btn-register">Teacher</button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Acadify</h2>
+            <h1>Your modern school grading and monitoring system.</h1>
+            <p>Visualize student performance instantly.</p>
+            <button class="btn btn-cta">Get Started Now</button>
+        </div>
+
+        <div class="dashboard-preview">
+            <div class="dashboard-header">
+                <div class="school-info">
+                    <div class="school-icon">M</div>
+                    <div>
+                        <div class="school-name">University of Rizal System - Morong</div>
+                        <div class="school-address">Sumulong St, Morong, Rizal</div>
+                    </div>
+                </div>
+                <div style="font-weight: 600; font-size: 0.9rem;">Teachers</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1rem;">
+                <div class="sidebar">
+                    <div class="menu-item">📊 Dashboard</div>
+                    <div class="menu-item active">👥 Teachers</div>
+                    <div class="menu-item">🎓 Students</div>
+                    <div class="menu-section">Curriculum</div>
+                    <div class="menu-item">📚 Program Offerings</div>
+                    <div class="menu-item">📖 Courses</div>
+                    <div class="menu-item">🏫 Faculties</div>
+                    <div class="menu-item">📋 Sections</div>
+                    <div class="menu-section">School</div>
+                    <div class="menu-item">📅 School Years</div>
+                    <div class="menu-item">🏛️ Classes</div>
+                    <div class="menu-item">🏢 School Profile</div>
+                </div>
+
+                <div>
+                    <table class="teacher-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Teacher ID</th>
+                                <th>Designation</th>
+                                <th>Faculties/Departments</th>
+                                <th>Gender</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Gonzales, Pedro Santos</td>
+                                <td class="teacher-id">10NNN888</td>
+                                <td>Master Teacher I</td>
+                                <td class="subject">Mathematics<br><small>Junior High School</small></td>
+                                <td>Male</td>
+                            </tr>
+                            <tr>
+                                <td>Santos, Victoria Bautista</td>
+                                <td class="teacher-id">10NNN881</td>
+                                <td>Master Teacher I</td>
+                                <td class="subject">Mathematics<br><small>Junior High School</small></td>
+                                <td>Female</td>
+                            </tr>
+                            <tr>
+                                <td>Lopez, Antonio Mendoza</td>
+                                <td class="teacher-id">10NNN880</td>
+                                <td>Master Teacher I</td>
+                                <td class="subject">Mathematics</td>
+                                <td>Male</td>
+                            </tr>
+                            <tr>
+                                <td>Gonzales, Luisa Gonzalez</td>
+                                <td class="teacher-id">10NNN882</td>
+                                <td>Master Teacher I</td>
+                                <td class="subject">Mathematics<br><small>Junior High School</small></td>
+                                <td>Female</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <!-- Footer Logo -->
+                <div class="footer-logo-section">
+                    <div class="footer-logo">
+                        <svg class="footer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L15 22h-5.25v-5zm-5.25 0L0 22h5.25v-5zM12 12V6m-3 6h6m-3 0V6m-3 0a3 3 0 106 0m-6 0h6m-3 0a3 3 0 106 0m-6 0V6"></path></svg>
+                        Acadify
+                    </div>
+                </div>
+                
+                <!-- Footer Navigation Links -->
+                <ul class="footer-nav-links">
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="footer-copyright">
+                &copy; <span id="current-year">2025</span> Acadify&trade;. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript to update the copyright year dynamically -->
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Cursor light effect
+        const cursorLight = document.querySelector('.cursor-light');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursorLight.style.left = e.clientX + 'px';
+            cursorLight.style.top = e.clientY + 'px';
+        });
+    </script>
+</body>
+</html>
