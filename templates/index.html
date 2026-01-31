@@ -25,8 +25,8 @@
             </ul> #}
         </div>
         <div class="nav-buttons">
-            <button class="btn btn-signin">Student</button>
-            <button class="btn btn-register">Teacher</button>
+            <a href="{{ url_for('auth.student_login') }}" class="btn btn-signin">Student</a>
+            <a href="{{ url_for('auth.teacher_admin_login') }}" class="btn btn-register">Teacher</a>
         </div>
     </nav>
 

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acadify - Professor Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff; /* Distinct color for Teacher UI */
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --warning-orange: #d29922;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent-purple);
+        }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--border-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(188, 140, 255, 0.1);
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            margin-bottom: 2.5rem;
+        }
+
+        /* --- Stats Grid --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            padding: 8px;
+            border-radius: 8px;
+            background: var(--card-color);
+            color: var(--accent-purple);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* --- Dashboard Sections --- */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Course Cards --- */
+        .course-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .course-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .course-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .course-code {
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .course-name {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .course-meta {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- Submissions List --- */
+        .submission-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1rem;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .student-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--card-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+        }
+
+        .submission-info {
+            flex: 1;
+        }
+
+        .submission-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .submission-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .grade-tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(210, 153, 34, 0.1);
+            color: var(--warning-orange);
+            border: 1px solid rgba(210, 153, 34, 0.2);
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .btn-text {
+            color: var(--accent-blue);
+            font-size: 0.8rem;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Management</span>
+            <a href="#" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="teacher_classes.html" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Classes</span>
+            </a>
+            <a href="grading.html" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Insights</span>
+            <a href="#" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Analytics</span>
+            </a>
+            <a href="#" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="welcome-section">
+            <h1 style="font-size: 1.8rem; color: #fff;">Welcome back, Prof. Mendoza</h1>
+            <p style="color: var(--text-dim); margin-top: 5px;">Here's what's happening across your classes today.</p>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
+                    <span style="color: var(--success-green); font-size: 0.75rem; font-weight: 600;">+4 New</span>
+                </div>
+                <div class="stat-value">142</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+                </div>
+                <div class="stat-value">28</div>
+                <div class="stat-label">Pending Submissions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                </div>
+                <div class="stat-value">04</div>
+                <div class="stat-label">Classes Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon"><svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+                </div>
+                <div class="stat-value">86%</div>
+                <div class="stat-label">Avg. Attendance</div>
+            </div>
+        </section>
+
+        <div class="dashboard-layout">
+            <section>
+                <div class="section-title">
+                    <span>Active Classes</span>
+                    <a href="teacher_classes.html" class="btn-text">View All</a>
+                </div>
+                <div class="course-grid">
+                    <div class="course-card">
+                        <div class="course-code">CS201 • Section A</div>
+                        <div class="course-name">Data Structures & Algorithms</div>
+                        <div class="course-meta">
+                            <span>32 Students</span>
+                            <span style="color: var(--warning-orange);">12 Ungraded</span>
+                        </div>
+                    </div>
+                    <div class="course-card">
+                        <div class="course-code">CS202 • Section B</div>
+                        <div class="course-name">Object-Oriented Programming</div>
+                        <div class="course-meta">
+                            <span>28 Students</span>
+                            <span style="color: var(--success-green);">All Graded</span>
+                        </div>
+                    </div>
+                    <div class="course-card">
+                        <div class="course-code">CS105 • Section A</div>
+                        <div class="course-name">Intro to Computing</div>
+                        <div class="course-meta">
+                            <span>45 Students</span>
+                            <span style="color: var(--warning-orange);">8 Ungraded</span>
+                        </div>
+                    </div>
+                    <div class="course-card">
+                        <div class="course-code">CS301 • Section C</div>
+                        <div class="course-name">Database Systems</div>
+                        <div class="course-meta">
+                            <span>37 Students</span>
+                            <span style="color: var(--success-green);">All Graded</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <aside>
+                <div class="section-title">
+                    <span>Recent Submissions</span>
+                </div>
+                <div class="submission-item">
+                    <div class="student-avatar">JD</div>
+                    <div class="submission-info">
+                        <div class="submission-title">John Doe</div>
+                        <div class="submission-time">CS201 • Lab 4</div>
+                    </div>
+                    <span class="grade-tag">Pending</span>
+                </div>
+                <div class="submission-item">
+                    <div class="student-avatar">AS</div>
+                    <div class="submission-info">
+                        <div class="submission-title">Alice Smith</div>
+                        <div class="submission-time">CS202 • Quiz 2</div>
+                    </div>
+                    <span class="grade-tag">Pending</span>
+                </div>
+                <div class="submission-item">
+                    <div class="student-avatar">RJ</div>
+                    <div class="submission-info">
+                        <div class="submission-title">Robert Jenkins</div>
+                        <div class="submission-time">CS201 • Lab 4</div>
+                    </div>
+                    <span class="grade-tag">Pending</span>
+                </div>
+                <div class="submission-item">
+                    <div class="student-avatar">ML</div>
+                    <div class="submission-info">
+                        <div class="submission-title">Maria Lopez</div>
+                        <div class="submission-time">CS301 • Project Proposal</div>
+                    </div>
+                    <span class="grade-tag">Pending</span>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+</body>
+</html>

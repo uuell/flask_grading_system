@@ -6,7 +6,7 @@ Uses the Application Factory pattern for modularity and testing.
 
 from flask import Flask, render_template
 from config import config
-from extensions import db, migrate, login_manager
+from extensions import db, migrate, login_manager, bcrypt
 
 
 def create_app(config_name='development'):
@@ -29,6 +29,7 @@ def create_app(config_name='development'):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    bcrypt.init_app(app)
     
     # Configure Flask-Login
     login_manager.login_view = 'auth.login'  # Redirect to login page if not authenticated

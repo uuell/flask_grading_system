@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - My Grades</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --row-hover: #1c2128;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent-blue);
+        }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--border-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(88, 166, 255, 0.1);
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .nav-item.logout {
+            margin-top: auto;
+            color: #f85149;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        /* --- Grade Summaries --- */
+        .grade-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-val {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- Grades Table --- */
+        .grades-container {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .grade-table-header {
+            background: var(--card-color);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1.25rem 1.5rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .subject-info div:first-child {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .subject-info div:last-child {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .grade-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .status-passed {
+            color: var(--success-green);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .status-failed {
+            color: #f85149;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-select {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .action-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #4493f8;
+        }
+
+        .icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            vertical-align: middle;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            stroke: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <svg class="icon" style="width:24px; height:24px;" viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">General</span>
+            <a href="{{ url_for('student.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('student.my_classes') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span>My Classes</span>
+            </a>
+            <a href="{{ url_for('student.my_grades') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>My Grades</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Tools</span>
+            <a href="{{ url_for('student.gpa_calculator') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                <span>GPA Calculator</span>
+            </a>
+            <a href="{{ url_for('student.profile') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span>Profile</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1 style="font-size: 1.75rem;">Academic Performance</h1>
+                <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 4px;">Detailed report of your semestral and cumulative grades.</p>
+            </div>
+            <button class="action-btn">Download Transcript (PDF)</button>
+        </header>
+
+        <section class="grade-summary-grid">
+            <div class="summary-card">
+                <span class="summary-val">{{ "%.2f"|format(semester_gpa) if semester_gpa else "—" }}</span>
+                <span class="summary-label">Term GPA</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-val">{{ "%.2f"|format(cumulative_gpa) if cumulative_gpa else "—" }}</span>
+                <span class="summary-label">Cumulative GPA</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-val">{{ academic_rank }}</span>
+                <span class="summary-label">Academic Rank</span>
+            </div>
+        </section>
+
+        <div class="filter-bar">
+            <select class="filter-select">
+                <option selected>{{ current_semester }} {{ current_school_year }}</option>
+                <option>All Semesters</option>
+            </select>
+            <select class="filter-select">
+                <option>All Subjects</option>
+                <option>Major Subjects</option>
+                <option>Minor Subjects</option>
+            </select>
+        </div>
+
+        <div class="grades-container">
+            <div class="grade-table-header">
+                <h3 style="font-size: 1rem;">Subject Breakdown</h3>
+                <span class="nav-label" style="margin-bottom: 0;">
+                    AY {{ current_school_year }} • {{ current_semester }}
+                </span>
+            </div>
+            
+            {% if current_classes_with_grades %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subject & Code</th>
+                        <th>Units</th>
+                        <th>Midterm</th>
+                        <th>Finals</th>
+                        <th>Sem Grade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in current_classes_with_grades %}
+                    <tr>
+                        <td class="subject-info">
+                            <div>{{ item.class.subject.name }}</div>
+                            <div>{{ item.class.subject.code }}</div>
+                        </td>
+                        <td>{{ "%.1f"|format(item.class.units) }}</td>
+                        <td>{{ "%.2f"|format(item.midterm) if item.midterm else "—" }}</td>
+                        <td>{{ "%.2f"|format(item.finals) if item.finals else "—" }}</td>
+                        <td>
+                            {% if item.semester_grade %}
+                                <span class="grade-pill">{{ "%.2f"|format(item.semester_grade) }}</span>
+                            {% else %}
+                                <span style="color: var(--text-dim);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.semester_grade %}
+                                {% if item.semester_grade <= 3.0 %}
+                                    <span class="status-passed">Passed</span>
+                                {% else %}
+                                    <span class="status-failed">Failed</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-dim); font-size: 0.8rem;">Not Graded</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h3>No Grades Available</h3>
+                <p style="margin-top: 0.5rem;">You don't have any grades for {{ current_semester }} ({{ current_school_year }}).</p>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem;">Grades will appear here once your professors have graded your work.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+</body>
+</html>
