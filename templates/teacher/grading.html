@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - Grading Sheet</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --error-red: #f85149;
+            --table-header: #161b22;
+            --cell-hover: #1f242c;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-purple); fill: none; }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover { background-color: var(--border-color); }
+        .nav-item.active { background-color: rgba(188, 140, 255, 0.1); color: var(--accent-purple); font-weight: 600; }
+        .nav-item.logout { margin-top: auto; color: #f85149; }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Toolbar --- */
+        .grading-toolbar {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .class-selector {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .selector-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .select-input {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            min-width: 200px;
+        }
+
+        .select-input:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #6e40c9, #bc8cff);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(110, 64, 201, 0.3);
+        }
+        
+        .btn-ai:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .btn-save {
+            background: var(--success-green);
+            color: white;
+            border: none;
+        }
+
+        .btn-save:hover { opacity: 0.9; }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-dim);
+        }
+        
+        .btn-outline:hover { border-color: var(--text-main); color: var(--text-main); }
+
+        /* --- Excel-Like Grid --- */
+        .spreadsheet-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9rem;
+            min-width: 1000px;
+        }
+
+        th {
+            background: var(--table-header);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .removable-header {
+            position: relative;
+            padding-right: 25px;
+        }
+        
+        .remove-col-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            display: none;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .removable-header:hover .remove-col-btn {
+            display: block;
+        }
+        
+        .remove-col-btn:hover {
+            color: var(--error-red);
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        th:first-child, td:first-child {
+            position: sticky;
+            left: 0;
+            background: var(--sidebar-color);
+            z-index: 20;
+            border-right: 2px solid var(--border-color);
+            width: 240px;
+        }
+        th:nth-child(2), td:nth-child(2) {
+            position: sticky;
+            left: 240px;
+            background: var(--sidebar-color);
+            z-index: 20;
+            border-right: 1px solid var(--border-color);
+            width: 120px;
+        }
+
+        th:first-child { z-index: 30; }
+        th:nth-child(2) { z-index: 30; }
+
+        td {
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            padding: 0;
+            background: var(--bg-color);
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 40px;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 10px;
+            font-family: monospace;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .cell-input:hover {
+            background: var(--cell-hover);
+        }
+
+        .cell-input:focus {
+            outline: 2px solid var(--accent-purple);
+            background: rgba(188, 140, 255, 0.05);
+            position: relative;
+            z-index: 5;
+        }
+
+        .cell-input.changed {
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .cell-input.has-components {
+            background: rgba(35, 134, 54, 0.1);
+            color: var(--success-green);
+            font-weight: 600;
+        }
+
+        .cell-info {
+            padding: 0 10px;
+            height: 40px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .student-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .student-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--card-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--accent-purple);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .cell-calc {
+            background: rgba(88, 166, 255, 0.05);
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        /* --- Component Entry Modal --- */
+        .component-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .component-modal-overlay.show { display: flex; }
+
+        .component-modal {
+            background: var(--sidebar-color);
+            width: 700px;
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .modal-header p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .component-section {
+            margin-bottom: 2rem;
+        }
+
+        .component-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .component-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .component-weight {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            background: var(--card-color);
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+
+        .component-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .component-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            background: var(--bg-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .item-input-group {
+            flex: 1;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .item-name-input {
+            flex: 1;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .item-name-input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .item-score-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .item-score-input {
+            width: 70px;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .item-score-input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .item-percentage {
+            min-width: 60px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .item-delete-btn {
+            padding: 6px 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-dim);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .item-delete-btn:hover {
+            background: rgba(248, 81, 73, 0.1);
+            border-color: var(--error-red);
+            color: var(--error-red);
+        }
+
+        .add-item-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-dim);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        .add-item-btn:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+            background: rgba(188, 140, 255, 0.05);
+        }
+
+        .component-summary {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--card-color);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .summary-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .empty-component {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            background: var(--bg-color);
+            border-radius: 6px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .final-grade-display {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .final-grade-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .final-grade-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success-green);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* --- AI Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--sidebar-color);
+            width: 500px;
+            max-width: 90vw;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .modal h2 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .modal p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-purple);
+            background: rgba(188, 140, 255, 0.05);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .modal-footer-ai {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .icon { 
+            width: 18px; 
+            height: 18px; 
+            fill: none; 
+            stroke: currentColor; 
+            stroke-width: 2; 
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 1rem 2rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(35, 134, 54, 0.1);
+            border: 1px solid rgba(35, 134, 54, 0.3);
+            color: var(--success-green);
+        }
+
+        .alert-error {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: var(--error-red);
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            z-index: 100;
+        }
+
+        .save-indicator.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .date-input {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Management</span>
+            <a href="{{ url_for('teacher.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('teacher.classes') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Classes</span>
+            </a>
+            <a href="{{ url_for('teacher.grading') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Insights</span>
+            <a href="{{ url_for('teacher.profile') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Profile</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Grading Toolbar -->
+        <header class="grading-toolbar">
+            <div class="class-selector">
+                <div class="selector-group">
+                    <span class="selector-label">Semester</span>
+                    <select class="select-input" id="semesterSelect" onchange="applyFilters()">
+                        <option value="all" {% if selected_semester == 'all' %}selected{% endif %}>All Semesters</option>
+                        <option value="1st Semester" {% if selected_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                        <option value="2nd Semester" {% if selected_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                        <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
+                    </select>
+                </div>
+                
+                <div class="selector-group">
+                    <span class="selector-label">Year</span>
+                    <select class="select-input" id="yearSelect" onchange="applyFilters()" style="min-width: 150px;">
+                        <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
+                        {% for year in available_years %}
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                            {{ year }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="selector-group" style="display: flex; flex-direction: row; align-items: flex-end; gap: 5px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="selector-label">Jump to Year</span>
+                        <input type="text" 
+                            id="customYearInput" 
+                            placeholder="YYYY-YYYY"
+                            style="background: var(--sidebar-color);
+                                    border: 1px solid var(--border-color);
+                                    color: var(--text-main);
+                                    padding: 8px 12px;
+                                    border-radius: 6px;
+                                    font-size: 0.9rem;
+                                    width: 120px;"
+                            pattern="\d{4}-\d{4}">
+                    </div>
+                    <button type="button" 
+                            class="btn btn-outline" 
+                            onclick="jumpToCustomYear()"
+                            style="padding: 8px 12px; height: 38px;">
+                        Go
+                    </button>
+                </div>
+                
+                <div class="selector-group">
+                    <span class="selector-label">Class</span>
+                    <select class="select-input" id="classSelect" onchange="changeClass()">
+                        {% if classes %}
+                            {% for cls in classes %}
+                            <option value="{{ cls.id }}" {% if selected_class and cls.id == selected_class.id %}selected{% endif %}>
+                                {{ cls.effective_subject_code }} - {{ cls.effective_subject_name }} (Sec {{ cls.section }})
+                            </option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="">No classes available</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="action-group">
+                <button class="btn btn-outline" onclick="addTest()">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                    Add Test/Quiz
+                </button>
+                <button class="btn btn-ai" onclick="toggleAIModal(true)">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    AI Auto-Grade
+                </button>
+            </div>
+        </header>
+
+        <!-- Excel-Like Grid -->
+        {% if selected_class and grading_data %}
+        <div class="spreadsheet-container">
+            <table id="gradeTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th style="min-width: 240px;">Student Name</th>
+                        <th style="min-width: 120px;">ID Number</th>
+                        {% for test in grading_data.tests %}
+                        <th class="removable-header" style="min-width: 100px;" data-test-id="{{ test.id }}">
+                            {{ test.title }}
+                            <span class="remove-col-btn" onclick="deleteTest({{ test.id }}, '{{ test.title }}')">×</span>
+                        </th>
+                        {% endfor %}
+                        <th style="min-width: 100px; color: var(--accent-blue);">Average Grade</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for student_data in grading_data.students %}
+                    <tr data-student-id="{{ student_data.student.id }}">
+                        <td>
+                            <div class="cell-info">
+                                <div class="student-name-container">
+                                    <div class="student-avatar">
+                                        {{ student_data.student.first_name[0] }}{{ student_data.student.last_name[0] }}
+                                    </div>
+                                    {{ student_data.student.get_full_name() }}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-info" style="font-family: monospace;">
+                                {{ student_data.student.student_number }}
+                            </div>
+                        </td>
+                        {% for test in grading_data.tests %}
+                        <td>
+                            <input type="text" 
+                                   class="cell-input" 
+                                   data-student-id="{{ student_data.student.id }}"
+                                   data-test-id="{{ test.id }}"
+                                   value="{{ '%.2f'|format(student_data.test_grades[test.id]) if student_data.test_grades[test.id] is not none else '-' }}"
+                                   readonly
+                                   placeholder="-"
+                                   onclick="openComponentModal({{ student_data.student.id }}, {{ test.id }}, '{{ student_data.student.get_full_name() }}', '{{ test.title }}')">
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <input type="text" 
+                                   class="cell-input cell-calc" 
+                                   id="avg-{{ student_data.student.id }}"
+                                   value="{{ '%.2f'|format(student_data.enrollment.final_grade) if student_data.enrollment.final_grade else '-' }}" 
+                                   readonly>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            <h3>No Class Selected</h3>
+            <p style="margin-top: 0.5rem;">
+                {% if not classes %}
+                    You don't have any classes yet. Create a class first.
+                {% else %}
+                    Select a class from the dropdown above to start grading.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Component Entry Modal -->
+    <div class="component-modal-overlay" id="componentModal">
+        <div class="component-modal">
+            <div class="modal-header">
+                <h2 id="modalStudentName">Loading...</h2>
+                <p id="modalTestName">Loading...</p>
+            </div>
+            
+            <div class="modal-body" id="modalBody">
+                <!-- Components will be dynamically loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <div class="final-grade-display">
+                    <span class="final-grade-label">Final Grade</span>
+                    <span class="final-grade-value" id="finalGradeValue">-</span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeComponentModal()">Cancel</button>
+                    <button class="btn btn-save" onclick="saveComponentGrades()">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Modal -->
+    <div class="modal-overlay" id="aiModal">
+        <div class="modal">
+            <h2>AI Auto-Grade</h2>
+            <p>Upload a photo of a test paper or score summary sheet. The AI will extract grades and auto-fill the spreadsheet.</p>
+            
+            <form id="aiUploadForm" enctype="multipart/form-data">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept="image/*,.pdf" onchange="handleFileSelect(this)">
+                    <svg class="icon" style="width: 48px; height: 48px; color: var(--text-dim); margin-bottom: 10px;" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p style="font-weight: 600;" id="fileName">Click to upload or drag & drop</p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Supported: JPG, PNG, PDF (Max 10MB)</p>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-main); margin-bottom: 8px; font-weight: 500;">
+                        Target Test/Quiz
+                    </label>
+                    <select class="select-input" id="targetTestSelect" style="width: 100%;">
+                        {% if grading_data and grading_data.tests %}
+                            {% for test in grading_data.tests %}
+                            <option value="{{ test.id }}">{{ test.title }}</option>
+                            {% endfor %}
+                        {% endif %}
+                        <option value="new">Create New Test...</option>
+                    </select>
+                </div>
+
+                <div class="modal-footer-ai">
+                    <button type="button" class="btn btn-outline" onclick="toggleAIModal(false)">Cancel</button>
+                    <button type="button" class="btn btn-ai" onclick="processAIGrading()">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Process Image
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Save Indicator -->
+    <div class="save-indicator" id="saveIndicator">
+        <div class="spinner"></div>
+        <span>Saving changes...</span>
+    </div>
+
+    <script>
+        // ============================================================================
+        // GLOBAL STATE
+        // ============================================================================
+        
+        let currentStudentId = null;
+        let currentTestId = null;
+        let currentStudentName = '';
+        let currentTestName = '';
+        let currentClassFormula = null;
+        let componentData = {}; // Stores all component items
+        
+        // ============================================================================
+        // COMPONENT MODAL FUNCTIONS
+        // ============================================================================
+        
+        async function openComponentModal(studentId, testId, studentName, testName) {
+            currentStudentId = studentId;
+            currentTestId = testId;
+            currentStudentName = studentName;
+            currentTestName = testName;
+            
+            // Update modal header
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalTestName').textContent = `Test: ${testName}`;
+            
+            // Show loading
+            document.getElementById('modalBody').innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-dim);">Loading...</p>';
+            document.getElementById('componentModal').classList.add('show');
+            
+            try {
+                // Fetch class formula and existing component data
+                const classId = document.getElementById('classSelect').value;
+                
+                const [formulaResponse, gradesResponse] = await Promise.all([
+                    fetch(`/teacher/classes/${classId}/formula`),
+                    fetch(`/teacher/grading/components?student_id=${studentId}&test_id=${testId}`)
+                ]);
+                
+                const formulaData = await formulaResponse.json();
+                const gradesData = await gradesResponse.json();
+                
+                currentClassFormula = formulaData.formula;
+                componentData = gradesData.components || {};
+                
+                // Render the modal
+                renderComponentModal();
+                calculateFinalGrade();
+                
+            } catch (error) {
+                console.error('Error loading component data:', error);
+                document.getElementById('modalBody').innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error-red);">Error loading data. Please try again.</p>';
+            }
+        }
+        
+        function renderComponentModal() {
+            const modalBody = document.getElementById('modalBody');
+            
+            if (!currentClassFormula || !currentClassFormula.components) {
+                modalBody.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error-red);">No grading formula found for this class.</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            for (const component of currentClassFormula.components) {
+                const compName = component.name;
+                const compWeight = component.weight;
+                const items = componentData[compName] || [];
+                
+                html += `
+                    <div class="component-section">
+                        <div class="component-header">
+                            <span class="component-title">${compName}</span>
+                            <span class="component-weight">${compWeight}%</span>
+                        </div>
+                        
+                        <div class="component-items" id="items-${compName.replace(/\s+/g, '-')}">
+                `;
+                
+                if (items.length === 0) {
+                    html += `
+                        <div class="empty-component">
+                            No items yet. Click "Add Item" below to get started.
+                        </div>
+                    `;
+                } else {
+                    items.forEach((item, index) => {
+                        const percentage = item.max > 0 ? ((item.score / item.max) * 100).toFixed(1) : 0;
+                        html += renderComponentItem(compName, item, index, percentage);
+                    });
+                }
+                
+                html += `
+                        </div>
+                        
+                        <button class="add-item-btn" onclick="addComponentItem('${compName}')">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                            Add Item
+                        </button>
+                `;
+                
+                // Show component summary if items exist
+                if (items.length > 0) {
+                    const avgPercentage = calculateComponentAverage(items);
+                    html += `
+                        <div class="component-summary">
+                            <span class="summary-label">Component Average:</span>
+                            <span class="summary-value">${avgPercentage.toFixed(2)}%</span>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`;
+            }
+            
+            modalBody.innerHTML = html;
+        }
+        
+        function renderComponentItem(componentName, item, index, percentage) {
+            const safeCompName = componentName.replace(/\s+/g, '-');
+            return `
+                <div class="component-item" data-component="${componentName}" data-index="${index}">
+                    <div class="item-input-group">
+                        <input type="text" 
+                               class="item-name-input" 
+                               value="${item.name}"
+                               placeholder="Item name"
+                               onchange="updateItemField('${componentName}', ${index}, 'name', this.value)">
+                        
+                        <div class="item-score-group">
+                            <input type="number" 
+                                   class="item-score-input" 
+                                   value="${item.score}"
+                                   placeholder="Score"
+                                   step="0.01"
+                                   min="0"
+                                   onchange="updateItemField('${componentName}', ${index}, 'score', parseFloat(this.value))">
+                            <span style="color: var(--text-dim);">/</span>
+                            <input type="number" 
+                                   class="item-score-input" 
+                                   value="${item.max}"
+                                   placeholder="Max"
+                                   step="0.01"
+                                   min="0.01"
+                                   onchange="updateItemField('${componentName}', ${index}, 'max', parseFloat(this.value))">
+                        </div>
+                        
+                        <span class="item-percentage">${percentage}%</span>
+                    </div>
+                    
+                    <button class="item-delete-btn" onclick="deleteComponentItem('${componentName}', ${index})">
+                        <svg class="icon" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            `;
+        }
+        
+        function addComponentItem(componentName) {
+            if (!componentData[componentName]) {
+                componentData[componentName] = [];
+            }
+            
+            const newItem = {
+                name: `Item ${componentData[componentName].length + 1}`,
+                score: 0,
+                max: 100,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            componentData[componentName].push(newItem);
+            renderComponentModal();
+            calculateFinalGrade();
+        }
+        
+        function deleteComponentItem(componentName, index) {
+            if (!confirm('Delete this item?')) {
+                return;
+            }
+            
+            componentData[componentName].splice(index, 1);
+            renderComponentModal();
+            calculateFinalGrade();
+        }
+        
+        function updateItemField(componentName, index, field, value) {
+            if (!componentData[componentName] || !componentData[componentName][index]) {
+                return;
+            }
+            
+            componentData[componentName][index][field] = value;
+            
+            // Re-render to update percentage
+            renderComponentModal();
+            calculateFinalGrade();
+        }
+        
+        function calculateComponentAverage(items) {
+            if (items.length === 0) return 0;
+            
+            let totalPercentage = 0;
+            let count = 0;
+            
+            for (const item of items) {
+                if (item.max > 0) {
+                    totalPercentage += (item.score / item.max) * 100;
+                    count++;
+                }
+            }
+            
+            return count > 0 ? totalPercentage / count : 0;
+        }
+        
+        function calculateFinalGrade() {
+            if (!currentClassFormula || !currentClassFormula.components) {
+                return;
+            }
+            
+            let totalWeighted = 0;
+            let totalWeight = 0;
+            
+            for (const component of currentClassFormula.components) {
+                const compName = component.name;
+                const weight = component.weight;
+                const items = componentData[compName] || [];
+                
+                if (items.length === 0) continue;
+                
+                const avgPercentage = calculateComponentAverage(items);
+                totalWeighted += (avgPercentage * weight / 100);
+                totalWeight += weight;
+            }
+            
+            if (totalWeight === 0) {
+                document.getElementById('finalGradeValue').textContent = '-';
+                return;
+            }
+            
+            const finalPercentage = totalWeighted;
+            const finalGrade = convertToPhGrade(finalPercentage);
+            
+            document.getElementById('finalGradeValue').textContent = finalGrade.toFixed(2);
+        }
+        
+        function convertToPhGrade(percentage) {
+            // Philippine grading scale
+            if (percentage >= 97) return 1.0;
+            if (percentage >= 94) return 1.25;
+            if (percentage >= 91) return 1.5;
+            if (percentage >= 88) return 1.75;
+            if (percentage >= 85) return 2.0;
+            if (percentage >= 82) return 2.25;
+            if (percentage >= 79) return 2.5;
+            if (percentage >= 76) return 2.75;
+            if (percentage >= 75) return 3.0;
+            if (percentage >= 65) return 4.0;
+            return 5.0;
+        }
+        
+        async function saveComponentGrades() {
+            showSaveIndicator();
+            
+            try {
+                const response = await fetch('/teacher/grading/update-components', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        student_id: currentStudentId,
+                        test_id: currentTestId,
+                        components: componentData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update the cell in the spreadsheet
+                    const cell = document.querySelector(`input[data-student-id="${currentStudentId}"][data-test-id="${currentTestId}"]`);
+                    if (cell) {
+                        cell.value = data.final_grade.toFixed(2);
+                        
+                        // Add visual indicator if has components
+                        if (Object.keys(componentData).some(key => componentData[key].length > 0)) {
+                            cell.classList.add('has-components');
+                        }
+                    }
+                    
+                    // Update average
+                    await updateStudentAverage(currentStudentId);
+                    
+                    closeComponentModal();
+                    showAlert('Grades saved successfully!', 'success');
+                } else {
+                    showAlert('Error saving grades: ' + data.error, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error saving grades:', error);
+                showAlert('Error saving grades. Please try again.', 'error');
+            } finally {
+                hideSaveIndicator();
+            }
+        }
+        
+        async function updateStudentAverage(studentId) {
+            const classId = document.getElementById('classSelect').value;
+            
+            try {
+                const response = await fetch(`/teacher/grading/student-average?student_id=${studentId}&class_id=${classId}`);
+                const data = await response.json();
+                
+                if (data.success && data.average !== null) {
+                    const avgCell = document.getElementById(`avg-${studentId}`);
+                    if (avgCell) {
+                        avgCell.value = data.average.toFixed(2);
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating average:', error);
+            }
+        }
+        
+        function closeComponentModal() {
+            document.getElementById('componentModal').classList.remove('show');
+            currentStudentId = null;
+            currentTestId = null;
+            currentClassFormula = null;
+            componentData = {};
+        }
+        
+        // ============================================================================
+        // EXISTING FUNCTIONS (kept from original)
+        // ============================================================================
+        
+        function changeClass() {
+            const classId = document.getElementById('classSelect').value;
+            if (classId) {
+                const year = document.getElementById('yearSelect').value;
+                const semester = document.getElementById('semesterSelect').value;
+                
+                let url = `{{ url_for('teacher.grading') }}?class_id=${classId}`;
+                
+                if (year !== 'all') {
+                    url += `&year=${year}`;
+                }
+                
+                if (semester !== 'all') {
+                    url += `&semester=${semester}`;
+                }
+                
+                window.location.href = url;
+            }
+        }
+
+        function applyFilters() {
+            const year = document.getElementById('yearSelect').value;
+            const semester = document.getElementById('semesterSelect').value;
+            const classId = document.getElementById('classSelect').value;
+            
+            let url = "{{ url_for('teacher.grading') }}?";
+            
+            if (year !== 'all') {
+                url += `year=${year}&`;
+            }
+            
+            if (semester !== 'all') {
+                url += `semester=${semester}&`;
+            }
+            
+            if (classId) {
+                url += `class_id=${classId}&`;
+            }
+            
+            url = url.replace(/[&?]$/, '');
+            window.location.href = url;
+        }
+
+        function jumpToCustomYear() {
+            const input = document.getElementById('customYearInput');
+            const year = input.value.trim();
+            
+            const yearPattern = /^\d{4}-\d{4}$/;
+            if (!yearPattern.test(year)) {
+                alert('Please enter a valid academic year format: YYYY-YYYY\n\nExample: 2015-2016');
+                input.focus();
+                return;
+            }
+            
+            const [startYear, endYear] = year.split('-').map(y => parseInt(y));
+            if (endYear !== startYear + 1) {
+                alert('Academic year must be consecutive.\n\nExample: 2025-2026 (not 2025-2027)');
+                input.focus();
+                return;
+            }
+            
+            const semester = document.getElementById('semesterSelect').value;
+            const classId = document.getElementById('classSelect').value;
+            
+            let url = `{{ url_for('teacher.grading') }}?year=${year}`;
+            
+            if (semester !== 'all') {
+                url += `&semester=${semester}`;
+            }
+            
+            if (classId) {
+                url += `&class_id=${classId}`;
+            }
+            
+            window.location.href = url;
+        }
+
+        function addTest() {
+            const className = document.getElementById('classSelect').selectedOptions[0].text;
+            const testName = prompt(`Add new test/quiz for ${className}:\n\nEnter test name (e.g., Quiz 3, Midterm Exam):`);
+            
+            if (!testName || testName.trim() === '') {
+                return;
+            }
+            
+            const classId = document.getElementById('classSelect').value;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('teacher.create_test') }}';
+            
+            const classInput = document.createElement('input');
+            classInput.type = 'hidden';
+            classInput.name = 'class_id';
+            classInput.value = classId;
+            
+            const titleInput = document.createElement('input');
+            titleInput.type = 'hidden';
+            titleInput.name = 'title';
+            titleInput.value = testName;
+            
+            form.appendChild(classInput);
+            form.appendChild(titleInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function deleteTest(testId, testName) {
+            if (!confirm(`Delete "${testName}"?\n\nThis will remove all grades for this test. This action cannot be undone.`)) {
+                return;
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for('teacher.delete_test') }}';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'test_id';
+            input.value = testId;
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function toggleAIModal(show) {
+            document.getElementById('aiModal').classList.toggle('show', show);
+            if (!show) {
+                document.getElementById('fileInput').value = '';
+                document.getElementById('fileName').textContent = 'Click to upload or drag & drop';
+            }
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const maxSize = 10 * 1024 * 1024;
+                
+                if (file.size > maxSize) {
+                    alert('File too large. Maximum size is 10MB.');
+                    input.value = '';
+                    return;
+                }
+                
+                document.getElementById('fileName').textContent = file.name;
+            }
+        }
+
+        function processAIGrading() {
+            const fileInput = document.getElementById('fileInput');
+            const targetTest = document.getElementById('targetTestSelect').value;
+            
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a file first.');
+                return;
+            }
+            
+            if (!targetTest) {
+                alert('Please select a target test.');
+                return;
+            }
+            
+            alert('AI Auto-Grade feature coming soon!\n\nThis will use computer vision to:\n1. Extract student names/IDs from the image\n2. Read handwritten grades\n3. Auto-fill the spreadsheet\n\nFor now, please enter grades manually.');
+            toggleAIModal(false);
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const toolbar = document.querySelector('.grading-toolbar');
+            toolbar.after(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        function showSaveIndicator() {
+            document.getElementById('saveIndicator').classList.add('show');
+        }
+
+        function hideSaveIndicator() {
+            setTimeout(() => {
+                document.getElementById('saveIndicator').classList.remove('show');
+            }, 500);
+        }
+
+        // Close modals when clicking overlay
+        document.getElementById('aiModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                toggleAIModal(false);
+            }
+        });
+
+        document.getElementById('componentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeComponentModal();
+            }
+        });
+
+        // Allow Enter key for custom year
+        document.addEventListener('DOMContentLoaded', function() {
+            const customYearInput = document.getElementById('customYearInput');
+            if (customYearInput) {
+                customYearInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        jumpToCustomYear();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - Analytics</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --error-red: #f85149;
+            --warning-orange: #d29922;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-purple); fill: none; }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover { background-color: var(--border-color); }
+        .nav-item.active { background-color: rgba(188, 140, 255, 0.1); color: var(--accent-purple); font-weight: 600; }
+        .nav-item.logout { margin-top: auto; color: #f85149; }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-header p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .filter-select {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        /* --- Stats Grid --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--card-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-purple);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .stat-change.positive {
+            background: rgba(35, 134, 54, 0.1);
+            color: var(--success-green);
+        }
+
+        .stat-change.negative {
+            background: rgba(248, 81, 73, 0.1);
+            color: var(--error-red);
+        }
+
+        /* --- Charts & Visualizations --- */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Simple bar chart styling */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 100%;
+            gap: 8px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, var(--accent-purple), rgba(188, 140, 255, 0.5));
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 20px;
+            transition: all 0.3s;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* --- Performance Table --- */
+        .performance-table {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--card-color);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        tr:hover {
+            background: rgba(188, 140, 255, 0.05);
+        }
+
+        .performance-bar {
+            height: 6px;
+            background: var(--card-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .performance-fill {
+            height: 100%;
+            background: var(--accent-purple);
+            transition: width 0.3s;
+        }
+
+        .icon { 
+            width: 18px; 
+            height: 18px; 
+            fill: none; 
+            stroke: currentColor; 
+            stroke-width: 2; 
+        }
+
+        .grade-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .grade-excellent {
+            background: rgba(35, 134, 54, 0.1);
+            color: var(--success-green);
+        }
+
+        .grade-good {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .grade-average {
+            background: rgba(210, 153, 34, 0.1);
+            color: var(--warning-orange);
+        }
+
+        .grade-poor {
+            background: rgba(248, 81, 73, 0.1);
+            color: var(--error-red);
+        }
+
+        /* --- Distribution Chart --- */
+        .distribution-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .distribution-item {
+            text-align: center;
+        }
+
+        .distribution-bar {
+            height: 150px;
+            background: var(--card-color);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .distribution-fill {
+            background: linear-gradient(180deg, var(--accent-purple), rgba(188, 140, 255, 0.5));
+            transition: height 0.5s;
+        }
+
+        .distribution-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .distribution-value {
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Management</span>
+            <a href="{{ url_for('teacher.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('teacher.classes') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Classes</span>
+            </a>
+            <a href="{{ url_for('teacher.grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Insights</span>
+            <a href="{{ url_for('teacher.analytics') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Analytics</span>
+            </a>
+            <a href="{{ url_for('teacher.profile') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Profile</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1>Analytics Dashboard</h1>
+            <p>Comprehensive insights into student performance and class statistics</p>
+        </header>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">Academic Year</span>
+                <select class="filter-select">
+                    <option selected>{{ current_school_year }}</option>
+                    <option>2023-2024</option>
+                    <option>2022-2023</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Semester</span>
+                <select class="filter-select">
+                    <option selected>{{ current_semester }}</option>
+                    <option>2nd Semester</option>
+                    <option>Summer</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Class</span>
+                <select class="filter-select">
+                    <option>All Classes</option>
+                    {% for cls in classes %}
+                    <option>{{ cls.subject.code }} - Sec {{ cls.section }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    </div>
+                    <span class="stat-change positive">+12%</span>
+                </div>
+                <div class="stat-value">{{ analytics.total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <span class="stat-change positive">+5.2%</span>
+                </div>
+                <div class="stat-value">{{ "%.2f"|format(analytics.overall_average) }}</div>
+                <div class="stat-label">Overall Average Grade</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <span class="stat-change positive">+8%</span>
+                </div>
+                <div class="stat-value">{{ "%.0f"|format(analytics.passing_rate) }}%</div>
+                <div class="stat-label">Passing Rate</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <span class="stat-change negative">-3%</span>
+                </div>
+                <div class="stat-value">{{ "%.0f"|format(analytics.completion_rate) }}%</div>
+                <div class="stat-label">Grading Completion</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Class Performance Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Class Performance Overview</h3>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">Average Grades by Class</span>
+                </div>
+                <div class="chart-container">
+                    <div class="bar-chart">
+                        {% for class_stat in analytics.class_stats %}
+                        <div class="bar" style="height: {{ (class_stat.average / 5.0 * 100)|int }}%;">
+                            <span class="bar-value">{{ "%.2f"|format(class_stat.average) }}</span>
+                            <span class="bar-label">{{ class_stat.code }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Distribution -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Grade Distribution</h3>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">Philippine Grading System</span>
+                </div>
+                <div class="distribution-grid">
+                    {% for dist in analytics.grade_distribution %}
+                    <div class="distribution-item">
+                        <div class="distribution-bar">
+                            <div class="distribution-fill" style="height: {{ dist.percentage }}%;"></div>
+                        </div>
+                        <div class="distribution-label">{{ dist.grade }}</div>
+                        <div class="distribution-value">{{ dist.count }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Table -->
+        <div class="performance-table">
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.1rem; font-weight: 600; color: #fff;">Class Performance Details</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Students</th>
+                        <th>Average Grade</th>
+                        <th>Passing Rate</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for class_stat in analytics.class_stats %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ class_stat.name }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim);">{{ class_stat.code }} • Section {{ class_stat.section }}</div>
+                        </td>
+                        <td>{{ class_stat.student_count }}</td>
+                        <td>
+                            <span class="grade-badge {% if class_stat.average <= 1.5 %}grade-excellent{% elif class_stat.average <= 2.0 %}grade-good{% elif class_stat.average <= 2.5 %}grade-average{% else %}grade-poor{% endif %}">
+                                {{ "%.2f"|format(class_stat.average) }}
+                            </span>
+                        </td>
+                        <td>{{ "%.0f"|format(class_stat.passing_rate) }}%</td>
+                        <td style="width: 200px;">
+                            <div class="performance-bar">
+                                <div class="performance-fill" style="width: {{ class_stat.passing_rate }}%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - User Management</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-gold: #d29922;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --danger-red: #f85149;
+            --success-green: #3fb950;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: #fff; margin-bottom: 2.5rem; }
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-gold); fill: none; }
+
+        .nav-group { flex: 1; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        .nav-item:hover { background-color: var(--border-color); }
+        .nav-item.active { background-color: rgba(210, 153, 34, 0.1); color: var(--accent-gold); font-weight: 600; }
+        .nav-item.logout { 
+            color: var(--danger-red); 
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+            margin-top: auto;
+        }
+
+        /* Flash Messages */
+        .flash-messages { margin-bottom: 1.5rem; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .alert-success {
+            background-color: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            color: var(--success-green);
+        }
+        .alert-danger {
+            background-color: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: var(--danger-red);
+        }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+        /* Header & Search */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-bar {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 400px;
+        }
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            width: 100%;
+            outline: none;
+        }
+
+        .filters { display: flex; gap: 10px; }
+        .filter-select {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        /* Table Container */
+        .table-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px 20px; background: var(--card-color); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 15px 20px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        tr:hover td { background: rgba(255,255,255,0.02); cursor: pointer; }
+
+        /* User Row Components */
+        .user-identity { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--accent-gold); }
+        .user-name { display: block; font-weight: 600; color: #fff; }
+        .user-email { display: block; font-size: 0.75rem; color: var(--text-dim); }
+
+        .badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+        .badge-student { background: rgba(88, 166, 255, 0.1); color: var(--accent-blue); }
+        .badge-teacher { background: rgba(188, 140, 255, 0.1); color: #bc8cff; }
+
+        .action-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 5px; border-radius: 4px; }
+        .action-btn:hover { color: var(--accent-gold); background: var(--border-color); }
+
+        /* Pagination */
+        .pagination { 
+            padding: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            color: var(--text-dim); 
+            font-size: 0.85rem; 
+            border-top: 1px solid var(--border-color);
+        }
+        .page-btns { display: flex; gap: 5px; align-items: center; }
+        .page-btn { 
+            padding: 5px 12px; 
+            border: 1px solid var(--border-color); 
+            background: var(--card-color); 
+            color: var(--text-main); 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-decoration: none;
+            display: inline-block;
+        }
+        .page-btn:hover { background: var(--border-color); }
+        .page-btn.active { background: var(--accent-gold); border-color: var(--accent-gold); color: #fff; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* User Profile Drawer */
+        .drawer {
+            position: fixed;
+            right: -450px;
+            top: 0;
+            width: 450px;
+            height: 100vh;
+            background: var(--sidebar-color);
+            border-left: 1px solid var(--border-color);
+            z-index: 100;
+            transition: right 0.3s ease;
+            padding: 2rem;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .drawer.open { right: 0; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .close-drawer { background: none; border: none; color: var(--text-dim); font-size: 1.5rem; cursor: pointer; }
+
+        .profile-section { margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; }
+        .profile-section h4 { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 1rem; }
+        .profile-data-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .data-label { color: var(--text-dim); }
+
+        .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+        .export-btn {
+            background: var(--accent-gold);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .export-btn:hover { opacity: 0.9; }
+
+        /* Action Buttons in Drawer */
+        .action-button {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.2s;
+        }
+
+        .btn-reset {
+            background: transparent;
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-reset:hover {
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .btn-delete {
+            background: transparent;
+            border-color: var(--danger-red);
+            color: var(--danger-red);
+        }
+
+        .btn-delete:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+        
+        <div class="nav-group">
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin.user_management') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span>User Management</span>
+            </a>
+            <a href="{{ url_for('admin.settings') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>System Settings</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <header class="header-actions">
+            <div>
+                <h1 style="color: #fff;">User Directory</h1>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Manage {{ total_users }} active accounts in the system.</p>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('admin.export_users_csv') }}" class="export-btn">Export CSV</a>
+            </div>
+        </header>
+
+        <section class="header-actions">
+            <form action="{{ url_for('admin.user_management') }}" method="GET" style="margin: 0;">
+                <div class="search-bar">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" name="search" placeholder="Search by name, ID, or email..." value="{{ search_query }}">
+                    <input type="hidden" name="role" value="{{ role_filter }}">
+                    <input type="hidden" name="department" value="{{ dept_filter }}">
+                </div>
+            </form>
+            <div class="filters">
+                <form action="{{ url_for('admin.user_management') }}" method="GET" style="display: flex; gap: 10px; margin: 0;">
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                    <select name="role" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Roles</option>
+                        <option value="Student" {{ 'selected' if role_filter == 'Student' else '' }}>Students</option>
+                        <option value="Teacher" {{ 'selected' if role_filter == 'Teacher' else '' }}>Teachers</option>
+                    </select>
+                    <select name="department" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept }}" {{ 'selected' if dept_filter == dept else '' }}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </section>
+
+        <div class="table-card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Identity</th>
+                            <th>Department</th>
+                            <th>ID Number</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_data in users %}
+                        <tr onclick="openProfile({{ loop.index0 }})">
+                            <td>
+                                <div class="user-identity">
+                                    <div class="avatar" style="color: {{ '#bc8cff' if user_data.role == 'Teacher' else 'var(--accent-gold)' }};">
+                                        {{ user_data.initials }}
+                                    </div>
+                                    <div>
+                                        <span class="user-name">{{ user_data.name }}</span>
+                                        <span class="user-email">{{ user_data.email }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ user_data.department }}</td>
+                            <td style="font-family: monospace;">{{ user_data.id_number }}</td>
+                            <td><span class="badge badge-{{ user_data.role.lower() }}">{{ user_data.role }}</span></td>
+                            <td>{{ user_data.created_date }}</td>
+                            <td style="text-align: right;">
+                                <button class="action-btn" onclick="event.stopPropagation(); openProfile({{ loop.index0 }})">•••</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <span>Showing {{ start_idx }} to {{ end_idx }} of {{ total_users }} users</span>
+                <div class="page-btns">
+                    {% if has_prev %}
+                    <a href="{{ url_for('admin.user_management', page=current_page-1, role=role_filter, department=dept_filter, search=search_query) }}" class="page-btn">← Previous</a>
+                    {% else %}
+                    <button class="page-btn" disabled>← Previous</button>
+                    {% endif %}
+                    
+                    {% for p in page_range %}
+                        {% if p == '...' %}
+                        <span style="padding: 5px 12px; color: var(--text-dim);">...</span>
+                        {% else %}
+                        <a href="{{ url_for('admin.user_management', page=p, role=role_filter, department=dept_filter, search=search_query) }}" 
+                           class="page-btn {{ 'active' if p == current_page else '' }}">{{ p }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if has_next %}
+                    <a href="{{ url_for('admin.user_management', page=current_page+1, role=role_filter, department=dept_filter, search=search_query) }}" class="page-btn">Next →</a>
+                    {% else %}
+                    <button class="page-btn" disabled>Next →</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Slide-over User Profile Drawer -->
+    <div id="userDrawer" class="drawer">
+        <div class="drawer-header">
+            <h2 id="drawerName">User Profile</h2>
+            <button class="close-drawer" onclick="closeProfile()">&times;</button>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div class="avatar" id="drawerAvatar" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto 10px;">?</div>
+            <h3 id="drawerRole">Student</h3>
+            <p style="color: var(--text-dim);" id="drawerEmail">email@acadify.edu</p>
+        </div>
+
+        <div class="profile-section">
+            <h4>Academic Info</h4>
+            <div class="profile-data-row">
+                <span class="data-label">Department:</span>
+                <span id="drawerDept">—</span>
+            </div>
+            <div class="profile-data-row">
+                <span class="data-label">ID Number:</span>
+                <span id="drawerIdNum">—</span>
+            </div>
+            <div class="profile-data-row">
+                <span class="data-label">Program:</span>
+                <span id="drawerProgram">—</span>
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <h4>Account Info</h4>
+            <div class="profile-data-row">
+                <span class="data-label">Created:</span>
+                <span id="drawerCreated">—</span>
+            </div>
+            <div class="profile-data-row">
+                <span class="data-label">User Type:</span>
+                <span id="drawerUserType">—</span>
+            </div>
+            <div class="profile-data-row">
+                <span class="data-label">User ID:</span>
+                <span style="font-family: monospace; color: var(--text-dim);" id="drawerUserId">—</span>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 2rem;">
+            <!-- Reset Password Form -->
+            <form id="resetPasswordForm" method="POST" style="margin: 0;" 
+                  onsubmit="return confirm('🔑 Reset Password?\n\nThis will reset the password to their ID number.\n\nNew password will be displayed in a success message.');">
+                <button type="submit" class="action-button btn-reset">
+                    🔄 Reset Password
+                </button>
+            </form>
+            
+            <!-- Delete User Form -->
+            <form id="deleteUserForm" method="POST" style="margin: 0;" 
+                  onsubmit="return confirm('⚠️ DELETE USER PERMANENTLY?\n\nThis will remove:\n• User account\n• All grades\n• All enrollments\n• All data\n\nThis action CANNOT be undone!\n\nType DELETE to confirm') && prompt('Type DELETE to confirm:') === 'DELETE';">
+                <button type="submit" class="action-button btn-delete">
+                    🗑️ Delete User
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // User data from backend
+        const usersData = {{ users_json|safe }};
+
+        function openProfile(index) {
+            const user = usersData[index];
+            
+            // Update user details
+            document.getElementById('drawerName').innerText = user.name;
+            document.getElementById('drawerRole').innerText = user.role;
+            document.getElementById('drawerEmail').innerText = user.email;
+            document.getElementById('drawerDept').innerText = user.department;
+            document.getElementById('drawerIdNum').innerText = user.id_number;
+            document.getElementById('drawerProgram').innerText = user.program || '—';
+            document.getElementById('drawerCreated').innerText = user.created_date;
+            document.getElementById('drawerUserType').innerText = user.role;
+            document.getElementById('drawerUserId').innerText = user.user_id;
+            document.getElementById('drawerAvatar').innerText = user.initials;
+            document.getElementById('drawerAvatar').style.color = user.role === 'Teacher' ? '#bc8cff' : 'var(--accent-gold)';
+            
+            // Update form actions with user_id
+            document.getElementById('resetPasswordForm').action = `/admin/reset-password/${user.user_id}`;
+            document.getElementById('deleteUserForm').action = `/admin/delete-user/${user.user_id}`;
+            
+            // Open drawer
+            document.getElementById('userDrawer').classList.add('open');
+        }
+
+        function closeProfile() {
+            document.getElementById('userDrawer').classList.remove('open');
+        }
+
+        // Close drawer when clicking on main content
+        document.querySelector('.main-content').addEventListener('click', function(e) {
+            if (document.getElementById('userDrawer').classList.contains('open')) {
+                if (!e.target.closest('tr') && !e.target.closest('.drawer')) {
+                    closeProfile();
+                }
+            }
+        });
+
+        // Close drawer with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeProfile();
+            }
+        });
+    </script>
+</body>
+</html>

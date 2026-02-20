@@ -66,11 +66,14 @@ def register_blueprints(app):
     from blueprints.student.routes import student_bp
     from blueprints.teacher.routes import teacher_bp
     from blueprints.ocr.routes import ocr_bp
+    from blueprints.admin.routes import admin_bp
+
     
     # Register with URL prefixes
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(teacher_bp, url_prefix='/teacher')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(ocr_bp, url_prefix='/ocr')
     
     # Register home/landing page route

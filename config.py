@@ -35,9 +35,93 @@ class Config:
     STUDENTS_PER_PAGE = 50
     CLASSES_PER_PAGE = 20
     
-    # Academic Settings
-    CURRENT_SCHOOL_YEAR = '2024-2025'
-    CURRENT_SEMESTER = '1st Semester'
+    # ========================================
+    # HYBRID ACADEMIC YEAR SETTINGS
+    # Priority: Database > Auto-Calculate
+    # ========================================
+    
+    @staticmethod
+    def _auto_calculate_school_year():
+        """
+        Auto-calculate school year based on current date
+        
+        Logic:
+        - August to December → YYYY-YYYY+1
+        - January to July → YYYY-1-YYYY
+        
+        Examples:
+        - August 2025 → "2025-2026"
+        - January 2026 → "2025-2026"
+        """
+        from datetime import datetime
+        now = datetime.now()
+        year = now.year
+        month = now.month
+        
+        if month >= 8:  # August onwards = new school year
+            return f"{year}-{year + 1}"
+        else:  # January to July = previous school year
+            return f"{year - 1}-{year}"
+    
+    @staticmethod
+    def _auto_calculate_semester():
+        """
+        Auto-calculate semester based on current date
+        
+        Logic:
+        - August to December → 1st Semester
+        - January to May → 2nd Semester
+        - June to July → Summer
+        """
+        from datetime import datetime
+        month = datetime.now().month
+        
+        if 8 <= month <= 12:
+            return "1st Semester"
+        elif 1 <= month <= 5:
+            return "2nd Semester"
+        else:  # June-July
+            return "Summer"
+    
+    @staticmethod
+    def get_current_school_year():
+        """
+        Get current school year
+        Priority: Database setting > Auto-calculate
+        """
+        try:
+            from models import SystemSettings
+            db_value = SystemSettings.get_setting('current_school_year')
+            if db_value:
+                return db_value
+        except:
+            # Database not available yet (during initial setup/migration)
+            pass
+        
+        # Fallback to auto-calculation
+        return Config._auto_calculate_school_year()
+    
+    @staticmethod
+    def get_current_semester():
+        """
+        Get current semester
+        Priority: Database setting > Auto-calculate
+        """
+        try:
+            from models import SystemSettings
+            db_value = SystemSettings.get_setting('current_semester')
+            if db_value:
+                return db_value
+        except:
+            # Database not available yet
+            pass
+        
+        # Fallback to auto-calculation
+        return Config._auto_calculate_semester()
+    
+    # ✅ Use the hybrid methods
+    CURRENT_SCHOOL_YEAR = property(lambda self: Config.get_current_school_year())
+    CURRENT_SEMESTER = property(lambda self: Config.get_current_semester())
     
     # Grade Settings (Philippine System)
     PASSING_GRADE = 3.0  # 3.0 and below is passing

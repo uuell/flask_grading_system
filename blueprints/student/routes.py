@@ -5,7 +5,7 @@ Handles student-specific routes: dashboard, grades, classes, profile.
 
 from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
-from models import Student, Class, Enrollment, Grade
+from models import Student, Class, Enrollment, Grade, Test
 from config import Config
 
 # Initialize the blueprint for student-related routes
@@ -40,8 +40,8 @@ def dashboard():
     student = current_user.student_profile
     
     # Get current semester info from config
-    current_school_year = Config.CURRENT_SCHOOL_YEAR
-    current_semester = Config.CURRENT_SEMESTER
+    current_school_year = Config.get_current_school_year()
+    current_semester = Config.get_current_semester()
     
     # Get enrolled classes for current semester
     enrolled_classes = Class.query.join(Enrollment).filter(
@@ -73,7 +73,7 @@ def dashboard():
     cumulative_gpa_major = student.get_cumulative_gpa('major_only')
     
     # Calculate total units enrolled
-    total_units = sum(cls.units for cls in enrolled_classes)
+    total_units = sum(cls.effective_units for cls in enrolled_classes)
     
     # Placeholder values for now (you can calculate these later)
     total_units_completed = None
@@ -110,8 +110,8 @@ def profile():
     student = current_user.student_profile
     
     # Calculate some profile stats
-    current_school_year = Config.CURRENT_SCHOOL_YEAR
-    current_semester = Config.CURRENT_SEMESTER
+    current_school_year = Config.get_current_school_year()
+    current_semester = Config.get_current_semester()
     
     # Get cumulative GPA
     cumulative_gpa = student.get_cumulative_gpa('weighted')
@@ -139,7 +139,7 @@ def profile():
         student_id=student.id,
         status='completed'
     ).all()
-    total_completed_units = sum(e.class_.units for e in completed_enrollments if e.final_grade and e.final_grade <= 3.0)
+    total_completed_units = sum(e.class_.effective_units for e in completed_enrollments if e.final_grade and e.final_grade <= 3.0)
     
     # Get current enrollments
     current_enrollments = Enrollment.query.filter_by(
@@ -181,8 +181,8 @@ def my_classes():
     student = current_user.student_profile
     
     # Get current semester classes
-    current_school_year = Config.CURRENT_SCHOOL_YEAR
-    current_semester = Config.CURRENT_SEMESTER
+    current_school_year = Config.get_current_school_year()
+    current_semester = Config.get_current_semester()
     
     current_classes = Class.query.join(Enrollment).filter(
         Enrollment.student_id == student.id,
@@ -193,10 +193,8 @@ def my_classes():
     
     # Calculate stats
     total_subjects = len(current_classes)
-    total_units = sum(cls.units for cls in current_classes)
-    
-    # Calculate lab hours (assuming lab classes have 'Lab' in name or specific attribute)
-    lab_hours = sum(cls.units * 1.5 for cls in current_classes if 'Lab' in cls.subject.name or cls.subject.code.endswith('L'))
+    total_units = sum(cls.effective_units for cls in current_classes)
+    lab_hours = sum(cls.effective_units * 1.5 for cls in current_classes if cls.subject and ('Lab' in cls.subject.name or cls.subject.code.endswith('L')))
     
     # Check for schedule conflicts (simplified - checks if any two classes overlap)
     has_conflicts = False  # You can implement conflict detection logic later
@@ -224,8 +222,8 @@ def my_grades():
     student = current_user.student_profile
     
     # Get all grades grouped by class
-    current_school_year = Config.CURRENT_SCHOOL_YEAR
-    current_semester = Config.CURRENT_SEMESTER
+    current_school_year = Config.get_current_school_year()
+    current_semester = Config.get_current_semester()
     
     # Get all enrolled classes for current semester with their grades
     current_classes_with_grades = []
@@ -316,8 +314,8 @@ def gpa_calculator():
     """
     student = current_user.student_profile
     
-    current_school_year = Config.CURRENT_SCHOOL_YEAR
-    current_semester = Config.CURRENT_SEMESTER
+    current_school_year = Config.get_current_school_year()
+    current_semester = Config.get_current_semester()
     
     # Get enrolled classes with current grades
     enrolled_classes_data = []
@@ -333,9 +331,9 @@ def gpa_calculator():
     for enrollment in enrollments:
         cls = enrollment.class_
         enrolled_classes_data.append({
-            'subject_name': cls.subject.name,
-            'subject_code': cls.subject.code,
-            'units': cls.units,
+            'subject_name': cls.effective_subject_name,
+            'subject_code': cls.effective_subject_code,
+            'units': cls.effective_units,
             'current_grade': enrollment.final_grade if enrollment.final_grade else None
         })
     

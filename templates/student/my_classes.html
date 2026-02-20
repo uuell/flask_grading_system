@@ -379,7 +379,7 @@
                         <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         {{ cls.schedule if cls.schedule else "TBA" }}
                     </div>
-                    <div>{{ "%.1f"|format(cls.units) }}</div>
+                    <div>{{ "%.1f"|format(cls.effective_units) }}</div>
                     <div><button class="action-btn">Syllabus</button></div>
                 </div>
                 {% endfor %}

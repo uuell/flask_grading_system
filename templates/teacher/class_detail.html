@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - {{ class_obj.effective_subject_name }}</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --error-red: #f85149;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-purple); fill: none; }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover { background-color: var(--border-color); }
+        .nav-item.active { background-color: rgba(188, 140, 255, 0.1); color: var(--accent-purple); font-weight: 600; }
+        .nav-item.logout { margin-top: auto; color: #f85149; }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* --- Header --- */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .header-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover { opacity: 0.9; }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover { border-color: var(--text-main); }
+
+        /* --- Info Cards --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .info-card-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .info-card-subtext {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        /* --- Sections --- */
+        .section {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* --- Student Table --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .student-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .student-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+            font-weight: 700;
+        }
+
+        .student-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .student-number {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .grade-excellent {
+            background: rgba(35, 134, 54, 0.2);
+            color: var(--success-green);
+        }
+
+        .grade-good {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .grade-passing {
+            background: rgba(255, 184, 0, 0.2);
+            color: #ffb800;
+        }
+
+        .grade-failing {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--error-red);
+        }
+
+        .grade-none {
+            background: rgba(139, 148, 158, 0.2);
+            color: var(--text-dim);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .icon {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(35, 134, 54, 0.1);
+            border: 1px solid rgba(35, 134, 54, 0.3);
+            color: var(--success-green);
+        }
+
+        .alert-error {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: var(--error-red);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 0.95rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Management</span>
+            <a href="{{ url_for('teacher.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('teacher.classes') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Classes</span>
+            </a>
+            <a href="{{ url_for('teacher.grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Insights</span>
+            <a href="{{ url_for('teacher.profile') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Profile</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Header -->
+        <div class="page-header">
+            <div class="breadcrumb">
+                <a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+                <span>›</span>
+                <a href="{{ url_for('teacher.classes') }}">Classes</a>
+                <span>›</span>
+                <span>{{ class_obj.effective_subject_code }}</span>
+            </div>
+            
+            <div class="header-title">
+                <div>
+                    <h1>{{ class_obj.effective_subject_name }}</h1>
+                    <p class="header-subtitle">
+                        {{ class_obj.effective_subject_code }} 
+                        {% if class_obj.section %}- Section {{ class_obj.section }}{% endif %}
+                        • {{ class_obj.school_year }} {{ class_obj.semester }}
+                    </p>
+                </div>
+                <div class="action-buttons">
+                    <a href="{{ url_for('teacher.grading', class_id=class_obj.id) }}" class="btn btn-primary">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Grade Students
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Info Cards -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-card-label">Enrolled Students</div>
+                <div class="info-card-value">{{ students_with_grades|length }}</div>
+                <div class="info-card-subtext">
+                    {% if class_obj.max_students %}
+                        {{ students_with_grades|length }} / {{ class_obj.max_students }} capacity
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-label">Units</div>
+                <div class="info-card-value">{{ class_obj.effective_units }}</div>
+                <div class="info-card-subtext">Credit hours</div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-label">Schedule</div>
+                <div class="info-card-value" style="font-size: 1rem;">{{ class_obj.schedule or 'TBA' }}</div>
+                <div class="info-card-subtext">
+                    {% if class_obj.room %}Room {{ class_obj.room }}{% else %}Room TBA{% endif %}
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-label">Graded Students</div>
+                <div class="info-card-value">
+                    {% set graded_count = students_with_grades|selectattr('grade_count', 'gt', 0)|list|length %}
+                    {{ graded_count }}
+                </div>
+                <div class="info-card-subtext">
+                    {{ students_with_grades|length - graded_count }} pending
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Details Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Class Information</h2>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Subject Code</span>
+                    <span class="detail-value">{{ class_obj.effective_subject_code }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Subject Name</span>
+                    <span class="detail-value">{{ class_obj.effective_subject_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">School Year</span>
+                    <span class="detail-value">{{ class_obj.school_year }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Semester</span>
+                    <span class="detail-value">{{ class_obj.semester }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Section</span>
+                    <span class="detail-value">{{ class_obj.section or 'No section (Irregular)' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Units</span>
+                    <span class="detail-value">{{ class_obj.effective_units }} units</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Schedule</span>
+                    <span class="detail-value">{{ class_obj.schedule or 'Not set' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Room</span>
+                    <span class="detail-value">{{ class_obj.room or 'Not set' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Roster -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Student Roster</h2>
+                <span style="font-size: 0.85rem; color: var(--text-dim);">
+                    {{ students_with_grades|length }} student{{ 's' if students_with_grades|length != 1 else '' }}
+                </span>
+            </div>
+
+            {% if students_with_grades %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Program</th>
+                        <th>Year Level</th>
+                        <th>Average Grade</th>
+                        <th>Graded Tests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in students_with_grades %}
+                    <tr>
+                        <td>
+                            <div class="student-cell">
+                                <div class="student-avatar">
+                                    {{ item.student.first_name[0] }}{{ item.student.last_name[0] }}
+                                </div>
+                                <div class="student-info">
+                                    <span class="student-name">{{ item.student.get_full_name() }}</span>
+                                    <span class="student-number">{{ item.student.student_number }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ item.student.program }}</td>
+                        <td>{{ item.student.year_level }}</td>
+                        <td>
+                            {% if item.avg_grade %}
+                                {% if item.avg_grade <= 1.5 %}
+                                    <span class="grade-badge grade-excellent">{{ "%.2f"|format(item.avg_grade) }}</span>
+                                {% elif item.avg_grade <= 2.5 %}
+                                    <span class="grade-badge grade-good">{{ "%.2f"|format(item.avg_grade) }}</span>
+                                {% elif item.avg_grade <= 3.0 %}
+                                    <span class="grade-badge grade-passing">{{ "%.2f"|format(item.avg_grade) }}</span>
+                                {% else %}
+                                    <span class="grade-badge grade-failing">{{ "%.2f"|format(item.avg_grade) }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="grade-badge grade-none">Not graded</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-dim);">
+                            {{ item.grade_count }} test{{ 's' if item.grade_count != 1 else '' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <h3>No Students Enrolled</h3>
+                <p style="margin-top: 0.5rem;">
+                    This class has no enrolled students yet.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+</body>
+</html>

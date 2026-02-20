@@ -378,7 +378,7 @@
                             <div>{{ item.class.subject.name }}</div>
                             <div>{{ item.class.subject.code }}</div>
                         </td>
-                        <td>{{ "%.1f"|format(item.class.units) }}</td>
+                        <td>{{ "%.1f"|format(item.class.effective_units) }}</td>
                         <td>{{ "%.2f"|format(item.midterm) if item.midterm else "—" }}</td>
                         <td>{{ "%.2f"|format(item.finals) if item.finals else "—" }}</td>
                         <td>

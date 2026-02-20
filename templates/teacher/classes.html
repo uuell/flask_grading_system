@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - Manage Classes</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --error-red: #f85149;
+            --warning-orange: #d29922;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fff;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-purple); fill: none; }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover { background-color: var(--border-color); }
+        .nav-item.active { background-color: rgba(188, 140, 255, 0.1); color: var(--accent-purple); font-weight: 600; }
+        .nav-item.logout { margin-top: auto; color: #f85149; }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-purple);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover { background-color: #a676e3; }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .filter-select {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 300px;
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* --- Class Cards --- */
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .class-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .class-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .class-status {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(188, 140, 255, 0.1);
+            color: var(--accent-purple);
+            border: 1px solid rgba(188, 140, 255, 0.2);
+        }
+
+        .class-header h3 { 
+            font-size: 1.1rem; 
+            color: #fff; 
+            margin-bottom: 4px;
+            padding-right: 80px;
+        }
+        
+        .class-subtitle { 
+            font-size: 0.85rem; 
+            color: var(--text-dim); 
+            margin-bottom: 1.5rem; 
+        }
+
+        /* Grading Progress UI */
+        .grading-progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: var(--card-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-purple);
+            transition: width 0.3s;
+        }
+
+        .class-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .roster-count {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .action-btns { display: flex; gap: 10px; }
+        
+        .icon-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-dim);
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover { border-color: var(--accent-purple); color: var(--accent-purple); }
+        .icon-btn.delete:hover { border-color: var(--error-red); color: var(--error-red); }
+
+        /* --- Modal Styling --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--sidebar-color);
+            width: 600px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+        }
+
+        .modal h2 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { 
+            display: block; 
+            font-size: 0.85rem; 
+            margin-bottom: 6px; 
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Student Roster Builder */
+        .roster-builder-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .roster-builder {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-color);
+        }
+
+        .roster-builder:empty:before {
+            content: 'No students added yet';
+            display: block;
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .student-pill {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--card-color);
+        }
+
+        .student-pill:last-child { border-bottom: none; }
+
+        .student-pill:hover {
+            background: var(--sidebar-color);
+        }
+
+        .remove-student {
+            color: var(--error-red);
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0 8px;
+        }
+
+        .remove-student:hover {
+            color: #ff6b6b;
+        }
+
+        /* Student Search Dropdown */
+        .student-search-container {
+            position: relative;
+        }
+
+        .student-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+
+        .student-search-results.show {
+            display: block;
+        }
+
+        .student-search-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .student-search-item:hover {
+            background: var(--sidebar-color);
+        }
+
+        .student-search-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .icon { 
+            width: 18px; 
+            height: 18px; 
+            fill: none; 
+            stroke: currentColor; 
+            stroke-width: 2; 
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(35, 134, 54, 0.1);
+            border: 1px solid rgba(35, 134, 54, 0.3);
+            color: var(--success-green);
+        }
+
+        .alert-error {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: var(--error-red);
+        }
+
+        @media (max-width: 768px) {
+            .class-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+               /* === NEW STYLES FOR GRADING FORMULA BUILDER === */
+        
+        .formula-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .formula-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .formula-header:hover .formula-title {
+            color: var(--accent-purple);
+        }
+
+        .formula-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .formula-toggle {
+            color: var(--text-dim);
+            transition: transform 0.3s;
+        }
+
+        .formula-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .formula-content {
+            display: none;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .formula-content.show {
+            display: block;
+        }
+
+        .component-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .component-row input {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .component-row input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+
+        .component-row .weight-input {
+            position: relative;
+        }
+
+        .component-row .weight-input::after {
+            content: '%';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        .remove-component-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--error-red);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-component-btn:hover {
+            background: rgba(248, 81, 73, 0.1);
+            border-color: var(--error-red);
+        }
+
+        .formula-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--card-color);
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .formula-summary.valid {
+            border-left: 3px solid var(--success-green);
+        }
+
+        .formula-summary.invalid {
+            border-left: 3px solid var(--error-red);
+        }
+
+        .weight-total {
+            font-weight: 600;
+        }
+
+        .weight-total.valid {
+            color: var(--success-green);
+        }
+
+        .weight-total.invalid {
+            color: var(--error-red);
+        }
+
+        .add-component-btn {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--accent-blue);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .add-component-btn:hover {
+            border-color: var(--accent-blue);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .passing-grade-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .passing-grade-input label {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            min-width: 120px;
+        }
+
+        .passing-grade-input input {
+            flex: 1;
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <span>Acadify</span>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Management</span>
+            <a href="{{ url_for('teacher.dashboard') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('teacher.classes') }}" class="nav-item active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Classes</span>
+            </a>
+            <a href="{{ url_for('teacher.grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">Insights</span>
+            <a href="{{ url_for('teacher.profile') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Profile</span>
+            </a>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+        </a>
+    </nav>
+
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <header class="header-actions">
+            <div>
+                <h1 style="color:#fff; font-size: 1.75rem;">Classes Management</h1>
+                <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 4px;">
+                    Organize your semester and track grading progress • {{ current_semester }}, {{ current_school_year }}
+                </p>
+            </div>
+            <button class="btn-primary" onclick="openCreateModal()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                New Class
+            </button>
+        </header>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <!-- Semester dropdown - Backend -->
+            <select class="filter-select" id="semesterFilter" onchange="applyFilters()">
+                <option value="all">All Semesters</option>
+                <option value="1st Semester" {% if selected_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                <option value="2nd Semester" {% if selected_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
+            </select>
+            
+            <!-- Year dropdown - Backend -->
+            <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+                <option value="all">All Years</option>
+                {% for year in available_years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                    {{ year }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Manual year input - Backend -->
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <span style="color: var(--text-dim); font-size: 0.8rem;">or</span>
+                <input type="text" 
+                    id="customYearInput" 
+                    class="form-input" 
+                    placeholder="e.g., 2015-2016"
+                    style="width: 130px; padding: 6px 10px; font-size: 0.85rem;"
+                    pattern="\d{4}-\d{4}">
+                <button type="button" 
+                        class="icon-btn" 
+                        onclick="jumpToCustomYear()"
+                        style="padding: 6px 12px;">
+                    <svg class="icon" style="width: 14px;" viewBox="0 0 24 24">
+                        <path d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Search box - Frontend (keeps instant search) -->
+            <input type="text" class="search-box" id="searchBox" placeholder="Search classes..." onkeyup="searchClasses()">
+            
+            <span style="margin-left: auto; color: var(--text-dim); font-size: 0.85rem;">
+                <span id="visibleCount">{{ classes_data|length }}</span> {{ 'class' if classes_data|length == 1 else 'classes' }}
+            </span>
+        </div>
+
+        <!-- Class Cards Grid -->
+        {% if classes_data %}
+        <div class="class-grid" id="classGrid">
+            {% for item in classes_data %}
+            <div class="class-card" data-class-id="{{ item.class.id }}" data-semester="{{ item.class.semester }}" data-year="{{ item.class.school_year }}">
+                <span class="class-status">Active</span>
+                <div class="class-header">
+                    <h3>{{ item.class.name }}</h3>
+                    <p class="class-subtitle">
+                        {{ item.class.code }} •
+                </div>
+                
+                <div class="grading-progress-container">
+                    <div class="progress-label">
+                        <span>Grading Completion</span>
+                        {% if item.grading_percentage == 100 %}
+                            <span style="color: var(--success-green);">{{ "%.0f"|format(item.grading_percentage) }}%</span>
+                        {% elif item.grading_percentage >= 50 %}
+                            <span style="color: var(--warning-orange);">{{ "%.0f"|format(item.grading_percentage) }}%</span>
+                        {% else %}
+                            <span style="color: var(--error-red);">{{ "%.0f"|format(item.grading_percentage) }}%</span>
+                        {% endif %}
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" 
+                             style="width: {{ item.grading_percentage }}%; 
+                                    background: {% if item.grading_percentage == 100 %}var(--success-green){% elif item.grading_percentage >= 50 %}var(--warning-orange){% else %}var(--error-red){% endif %};">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-footer">
+                    <div class="roster-count">
+                        <svg class="icon" style="width:14px;" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        {{ item.enrollment_count }} Student{{ 's' if item.enrollment_count != 1 else '' }}
+                        <span style="color: var(--text-dim); margin-left: 4px;">
+                            ({{ "%.0f"|format(item.capacity_percentage) }}%)
+                        </span>
+                    </div>
+                    <div class="action-btns">
+                        <button class="icon-btn" title="View Roster" onclick="window.location.href='{{ url_for('teacher.class_detail', class_id=item.class.id) }}'">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                        <button class="icon-btn" title="Edit Class" onclick="editClass({{ item.class.id }})">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button class="icon-btn delete" title="Delete Class" onclick="confirmDelete({{ item.class.id }}, '{{ item.class.name }}')">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            <h3>No classes yet</h3>
+            <p style="margin-top: 0.5rem;">Create your first class to get started.</p>
+            <button class="btn-primary" style="margin-top: 1.5rem;" onclick="openCreateModal()">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                Create First Class
+            </button>
+        </div>
+        {% endif %}
+    </main>
+
+    
+    <!-- Modal for New/Edit Class -->
+    <div class="modal-overlay" id="classModal">
+        <div class="modal">
+            <h2 id="modalTitle">Create New Class</h2>
+            
+            <form id="classForm" method="POST" action="{{ url_for('teacher.create_class') }}">
+                <input type="hidden" name="class_id" id="classId">
+                
+                <!-- === MANUAL SUBJECT INPUT (UPDATED) === -->
+                <div class="form-group">
+                    <label>Subject Name *</label>
+                    <input type="text" name="subject_name" id="subjectNameInput" class="form-input" 
+                           placeholder="e.g., Data Structures and Algorithms" required>
+                    <small style="color: var(--text-dim); font-size: 0.75rem; display: block; margin-top: 4px;">
+                        Enter the full name of the subject you're teaching
+                    </small>
+                </div>
+
+                <!-- Subject Code and Units -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Subject Code</label>
+                        <input type="text" name="subject_code" id="subjectCodeInput" class="form-input" 
+                               placeholder="e.g., CS201">
+                        <small style="color: var(--text-dim); font-size: 0.75rem; display: block; margin-top: 4px;">
+                            Optional course code
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label>Units *</label>
+                        <input type="number" name="units" id="unitsInput" class="form-input" 
+                               value="3" min="1" max="6" required>
+                    </div>
+                </div>
+
+                <!-- Section and Room -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Section *</label>
+                        <input type="text" name="section" id="sectionInput" class="form-input" placeholder="A" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Room</label>
+                        <input type="text" name="room" id="roomInput" class="form-input" placeholder="Room 301">
+                    </div>
+                </div>
+
+                <!-- Schedule -->
+                <div class="form-group">
+                    <label>Schedule</label>
+                    <input type="text" name="schedule" id="scheduleInput" class="form-input" placeholder="MWF 9:00-10:30">
+                    <small style="color: var(--text-dim); font-size: 0.75rem; display: block; margin-top: 4px;">
+                        e.g., "MWF 9:00-10:30" or "TTh 1:00-2:30"
+                    </small>
+                </div>
+
+                <!-- School Year and Semester -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>School Year *</label>
+                        <input type="text" name="school_year" id="schoolYearInput" class="form-input" 
+                               value="{{ current_school_year }}" placeholder="2024-2025" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Semester *</label>
+                        <select name="semester" id="semesterSelect" class="form-select" required>
+                            <option value="1st Semester" {% if current_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                            <option value="2nd Semester" {% if current_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                            <option value="Summer">Summer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Max Students -->
+                <div class="form-group">
+                    <label>Maximum Students</label>
+                    <input type="number" name="max_students" id="maxStudentsInput" class="form-input" value="40" min="1" max="100">
+                </div>
+
+                <!-- === GRADING FORMULA BUILDER (NEW!) === -->
+                <div class="formula-section">
+                    <div class="formula-header" onclick="toggleFormulaBuilder()">
+                        <div class="formula-title">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                            Grading Formula *
+                        </div>
+                        <span class="formula-toggle" id="formulaToggle">▼</span>
+                    </div>
+
+                    <div class="formula-content" id="formulaContent">
+                        <div id="componentsContainer">
+                            <!-- Component rows will be added here dynamically -->
+                        </div>
+
+                        <button type="button" class="add-component-btn" onclick="addComponent()">
+                            <svg class="icon" style="width: 14px; height: 14px; display: inline; vertical-align: middle;" viewBox="0 0 24 24">
+                                <path d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add Component
+                        </button>
+                        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 6px; padding: 10px; margin-top: 10px; font-size: 0.8rem; color: var(--accent-blue);">
+                            <strong>📝 Note:</strong> Max points removed - each quiz/exam will have its own max score when grading.
+                        </div>
+
+                        <div class="formula-summary" id="formulaSummary">
+                            <span>Total Weight:</span>
+                            <span class="weight-total" id="weightTotal">0%</span>
+                        </div>
+
+                        <div class="passing-grade-input">
+                            <label>Passing Grade:</label>
+                            <input type="number" name="passing_grade" id="passingGradeInput" 
+                                   value="3.0" min="1.0" max="5.0" step="0.25">
+                            <small style="color: var(--text-dim); font-size: 0.75rem;">
+                                (1.0 - 5.0, default: 3.0)
+                            </small>
+                        </div>
+
+                        <!-- Hidden input to store formula JSON -->
+                        <input type="hidden" name="grading_formula" id="gradingFormulaInput">
+                    </div>
+                </div>
+
+                <!-- Student Roster Builder (KEEP YOUR EXISTING CODE) -->
+                <div class="form-group">
+                    <label>Add Students to Class</label>
+                    <div class="roster-builder-header">
+                        <div class="student-search-container" style="flex: 1;">
+                            <input type="text" id="studentSearchInput" class="form-input" placeholder="Search students by name or ID..." autocomplete="off">
+                            <div class="student-search-results" id="studentSearchResults"></div>
+                        </div>
+                    </div>
+                    <div class="roster-builder" id="rosterBuilder"></div>
+                    <input type="hidden" name="student_ids" id="studentIdsInput">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">Create Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // === GRADING FORMULA BUILDER JAVASCRIPT ===
+        
+        let formulaComponents = [];
+
+        // Initialize with default components
+        function initializeFormula() {
+            formulaComponents = [
+                { name: 'Midterm Exam', weight: 50 },
+                { name: 'Final Exam', weight: 50 }
+            ];
+            renderComponents();
+        }
+
+        function toggleFormulaBuilder() {
+            const content = document.getElementById('formulaContent');
+            const toggle = document.getElementById('formulaToggle');
+            
+            content.classList.toggle('show');
+            toggle.classList.toggle('expanded');
+            
+            // Initialize formula on first open
+            if (content.classList.contains('show') && formulaComponents.length === 0) {
+                initializeFormula();
+            }
+        }
+
+        function addComponent() {
+            formulaComponents.push({
+                name: '',
+                weight: 0
+            });
+            renderComponents();
+            
+            // Focus on the new component's name input
+            const inputs = document.querySelectorAll('.component-row input[data-field="name"]');
+            const lastInput = inputs[inputs.length - 1];
+            if (lastInput) lastInput.focus();
+        }
+
+        function removeComponent(index) {
+            formulaComponents.splice(index, 1);
+            renderComponents();
+        }
+
+        function updateComponent(index, field, value) {
+            if (field === 'weight') {
+                formulaComponents[index][field] = parseInt(value) || 0;
+            } else {
+                formulaComponents[index][field] = value;
+            }
+            updateSummary();
+        }
+
+        function renderComponents() {
+            const container = document.getElementById('componentsContainer');
+            
+            if (formulaComponents.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 1rem;">No components yet. Click "Add Component" to start.</p>';
+                updateSummary();
+                return;
+            }
+
+            // UPDATED: Only 2 columns now (removed max_points)
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 3fr 1fr auto; gap: 10px; margin-bottom: 10px; font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">
+                    <div>COMPONENT NAME</div>
+                    <div>WEIGHT (%)</div>
+                    <div></div>
+                </div>
+            ` + formulaComponents.map((comp, index) => `
+                <div class="component-row" style="grid-template-columns: 3fr 1fr auto;">
+                    <input type="text" 
+                           placeholder="e.g., Quizzes" 
+                           value="${comp.name}"
+                           data-field="name"
+                           oninput="updateComponent(${index}, 'name', this.value)">
+                    
+                    <div class="weight-input">
+                        <input type="number" 
+                               placeholder="20" 
+                               min="0" 
+                               max="100"
+                               value="${comp.weight || ''}"
+                               data-field="weight"
+                               oninput="updateComponent(${index}, 'weight', this.value)">
+                    </div>
+                    
+                    <button type="button" 
+                            class="remove-component-btn" 
+                            onclick="removeComponent(${index})"
+                            ${formulaComponents.length === 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+                        ×
+                    </button>
+                </div>
+            `).join('');
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const totalWeight = formulaComponents.reduce((sum, comp) => sum + (comp.weight || 0), 0);
+            const summary = document.getElementById('formulaSummary');
+            const totalSpan = document.getElementById('weightTotal');
+            
+            totalSpan.textContent = totalWeight + '%';
+            
+            if (totalWeight === 100) {
+                summary.classList.remove('invalid');
+                summary.classList.add('valid');
+                totalSpan.classList.remove('invalid');
+                totalSpan.classList.add('valid');
+            } else {
+                summary.classList.remove('valid');
+                summary.classList.add('invalid');
+                totalSpan.classList.remove('valid');
+                totalSpan.classList.add('invalid');
+            }
+
+            // Update hidden input with formula JSON
+            updateFormulaJSON();
+        }
+
+        function updateFormulaJSON() {
+            const passingGrade = parseFloat(document.getElementById('passingGradeInput').value) || 3.0;
+            
+            // UPDATED: No max_points in components
+            const formula = {
+                components: formulaComponents,
+                passing_grade: passingGrade,
+                use_philippine_conversion: true
+            };
+            
+            document.getElementById('gradingFormulaInput').value = JSON.stringify(formula);
+        }
+
+        // Validate formula before submit
+        document.getElementById('classForm').addEventListener('submit', function(e) {
+            const totalWeight = formulaComponents.reduce((sum, comp) => sum + (comp.weight || 0), 0);
+            
+            if (totalWeight !== 100) {
+                e.preventDefault();
+                alert('Grading formula weights must total exactly 100%. Currently: ' + totalWeight + '%');
+                return false;
+            }
+            
+            // Check if all components have names
+            const hasEmptyNames = formulaComponents.some(comp => !comp.name || comp.name.trim() === '');
+            if (hasEmptyNames) {
+                e.preventDefault();
+                alert('All components must have a name.');
+                return false;
+            }
+            
+            // Update JSON one more time before submit
+            updateFormulaJSON();
+        });
+
+        // === YOUR EXISTING JAVASCRIPT FOR STUDENT ROSTER ===
+        // [KEEP ALL YOUR EXISTING CODE HERE]
+
+        let selectedStudents = [];
+        const allStudents = {{ all_students|tojson }};
+
+        function openCreateModal() {
+            document.getElementById('modalTitle').textContent = 'Create New Class';
+            document.getElementById('classForm').action = "{{ url_for('teacher.create_class') }}";
+            document.getElementById('submitBtn').textContent = 'Create Class';
+            document.getElementById('classForm').reset();
+            document.getElementById('classId').value = '';
+            selectedStudents = [];
+            updateRosterBuilder();
+            
+            // Reset formula
+            formulaComponents = [];
+            document.getElementById('formulaContent').classList.remove('show');
+            document.getElementById('formulaToggle').classList.remove('expanded');
+            
+            document.getElementById('classModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('classModal').classList.remove('show');
+        }
+
+        function editClass(classId) {
+            // TODO: Implement edit functionality
+            alert('Edit functionality coming soon! Class ID: ' + classId);
+        }
+
+        function confirmDelete(classId, className) {
+            if (confirm(`Are you sure you want to delete "${className}"?\n\nThis action cannot be undone.`)) {
+                // Create a form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{{ url_for('teacher.delete_class') }}";
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'class_id';
+                input.value = classId;
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Student search functionality
+        const searchInput = document.getElementById('studentSearchInput');
+        const searchResults = document.getElementById('studentSearchResults');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.remove('show');
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            // Filter students
+            const filtered = allStudents.filter(student => {
+                const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+                const studentNumber = student.student_number.toLowerCase();
+                return fullName.includes(query) || studentNumber.includes(query);
+            }).slice(0, 10); // Limit to 10 results
+
+            if (filtered.length === 0) {
+                searchResults.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-dim);">No students found</div>';
+                searchResults.classList.add('show');
+                return;
+            }
+
+            // Display results
+            searchResults.innerHTML = filtered.map(student => `
+                <div class="student-search-item" onclick="addStudent(${student.id}, '${student.first_name}', '${student.last_name}', '${student.student_number}')">
+                    <div>${student.first_name} ${student.last_name}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim);">${student.student_number} • ${student.program}</div>
+                </div>
+            `).join('');
+            
+            searchResults.classList.add('show');
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.remove('show');
+            }
+        });
+
+        function addStudent(id, firstName, lastName, studentNumber) {
+            // Check if already added
+            if (selectedStudents.find(s => s.id === id)) {
+                alert('This student is already added to the class.');
+                return;
+            }
+
+            selectedStudents.push({
+                id: id,
+                firstName: firstName,
+                lastName: lastName,
+                studentNumber: studentNumber
+            });
+
+            updateRosterBuilder();
+            searchInput.value = '';
+            searchResults.classList.remove('show');
+        }
+
+        function removeStudent(id) {
+            selectedStudents = selectedStudents.filter(s => s.id !== id);
+            updateRosterBuilder();
+        }
+
+        function updateRosterBuilder() {
+            const builder = document.getElementById('rosterBuilder');
+            const idsInput = document.getElementById('studentIdsInput');
+            
+            if (selectedStudents.length === 0) {
+                builder.innerHTML = '';
+            } else {
+                builder.innerHTML = selectedStudents.map(student => `
+                    <div class="student-pill">
+                        <span>${student.firstName} ${student.lastName} (${student.studentNumber})</span>
+                        <span class="remove-student" onclick="removeStudent(${student.id})">×</span>
+                    </div>
+                `).join('');
+            }
+
+            // Update hidden input with student IDs
+            idsInput.value = selectedStudents.map(s => s.id).join(',');
+        }
+
+        // Close modal when clicking overlay
+        document.getElementById('classModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Backend filtering - Reloads page with new filters
+        function applyFilters() {
+            const year = document.getElementById('yearFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            
+            // Build URL with filters
+            let url = "{{ url_for('teacher.classes') }}?";
+            
+            // Add year parameter
+            if (year !== 'all') {
+                url += `year=${year}&`;
+            }
+            
+            // Add semester parameter
+            if (semester !== 'all') {
+                url += `semester=${semester}&`;
+            }
+            
+            // Remove trailing & or ?
+            url = url.replace(/[&?]$/, '');
+            
+            // Reload page with filters
+            window.location.href = url;
+        }
+
+        // Jump to custom year (keeps existing semester filter if any)
+        function jumpToCustomYear() {
+            const input = document.getElementById('customYearInput');
+            const year = input.value.trim();
+            
+            // Validate format: YYYY-YYYY
+            const yearPattern = /^\d{4}-\d{4}$/;
+            if (!yearPattern.test(year)) {
+                alert('Please enter a valid academic year format: YYYY-YYYY\n\nExample: 2015-2016');
+                input.focus();
+                return;
+            }
+            
+            // Validate that years are consecutive
+            const [startYear, endYear] = year.split('-').map(y => parseInt(y));
+            if (endYear !== startYear + 1) {
+                alert('Academic year must be consecutive.\n\nExample: 2025-2026 (not 2025-2027)');
+                input.focus();
+                return;
+            }
+            
+            // Get current semester filter
+            const semester = document.getElementById('semesterFilter').value;
+            
+            // Build URL
+            let url = `{{ url_for('teacher.classes') }}?year=${year}`;
+            if (semester !== 'all') {
+                url += `&semester=${semester}`;
+            }
+            
+            // Reload page with the new year
+            window.location.href = url;
+        }
+
+        // Allow Enter key to submit custom year
+        document.getElementById('customYearInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                jumpToCustomYear();
+            }
+        });
+
+        // Frontend search (instant, no reload)
+        function searchClasses() {
+            const query = document.getElementById('searchBox').value.toLowerCase();
+            const cards = document.querySelectorAll('.class-card');
+            
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Update visible count
+            document.getElementById('visibleCount').textContent = visibleCount;
+        }
+    </script>
+</body>
+</html>
