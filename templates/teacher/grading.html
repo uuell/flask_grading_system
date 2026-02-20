@@ -1379,21 +1379,13 @@
             const semester = document.getElementById('semesterSelect').value;
             const classId = document.getElementById('classSelect').value;
             
-            let url = "{{ url_for('teacher.grading') }}?";
-            
-            if (year !== 'all') {
-                url += `year=${year}&`;
-            }
-            
-            if (semester !== 'all') {
-                url += `semester=${semester}&`;
-            }
+            // ✅ Always include both params
+            let url = `{{ url_for('teacher.grading') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
             
             if (classId) {
-                url += `class_id=${classId}&`;
+                url += `&class_id=${classId}`;
             }
             
-            url = url.replace(/[&?]$/, '');
             window.location.href = url;
         }
 

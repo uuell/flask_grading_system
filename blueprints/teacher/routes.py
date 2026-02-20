@@ -168,19 +168,21 @@ def classes():
     current_school_year = Config.get_current_school_year()
     current_semester = Config.get_current_semester()
     
-    # Get filters from query parameters
-    selected_year = request.args.get('year')
-    selected_semester = request.args.get('semester')
-    
-    # Build query
+    selected_year = request.args.get('year')      # None if not in URL
+    selected_semester = request.args.get('semester')  # None if not in URL
+
+    # Only default if param was NOT sent at all (first load)
+    if selected_year is None:
+        selected_year = current_school_year
+
+    if selected_semester is None:
+        selected_semester = current_semester
+
+    # Build query - only filter if not 'all'
     query = Class.query.filter_by(teacher_id=teacher.id)
-    
-    # Apply year filter
-    if selected_year and selected_year != 'all':
+    if selected_year != 'all':
         query = query.filter_by(school_year=selected_year)
-    
-    # Apply semester filter
-    if selected_semester and selected_semester != 'all':
+    if selected_semester != 'all':
         query = query.filter_by(semester=selected_semester)
     
     # Execute query
@@ -554,6 +556,244 @@ def update_formula(class_id):
         }), 500
 
 
+@teacher_bp.route('/classes/<int:class_id>/enrolled-students', methods=['GET'])
+@teacher_required
+def get_enrolled_students(class_id):
+    """
+    API endpoint to get currently enrolled students for a class
+    Used in edit mode to show existing roster
+    """
+    teacher = current_user.teacher_profile
+    
+    # Verify class belongs to this teacher
+    cls = Class.query.filter_by(
+        id=class_id,
+        teacher_id=teacher.id
+    ).first_or_404()
+    
+    # Get enrolled students
+    enrollments = Enrollment.query.filter_by(
+        class_id=class_id,
+        status='enrolled'
+    ).join(Student).order_by(Student.last_name, Student.first_name).all()
+    
+    students = [{
+        'id': e.student.id,
+        'first_name': e.student.first_name,
+        'last_name': e.student.last_name,
+        'student_number': e.student.student_number
+    } for e in enrollments]
+    
+    return jsonify({
+        'success': True,
+        'students': students
+    })
+
+
+@teacher_bp.route('/classes/<int:class_id>/edit-data', methods=['GET'])
+@teacher_required
+def get_class_edit_data(class_id):
+    """
+    API endpoint to get class data for editing
+    Returns JSON with class details and what can/cannot be edited
+    """
+    teacher = current_user.teacher_profile
+    
+    # Verify class belongs to this teacher
+    cls = Class.query.filter_by(
+        id=class_id,
+        teacher_id=teacher.id
+    ).first_or_404()
+    
+    # Check enrollment count
+    enrollment_count = Enrollment.query.filter_by(
+        class_id=class_id,
+        status='enrolled'
+    ).count()
+    
+    # Check if any grades exist
+    has_grades = Grade.query.join(Test).filter(
+        Test.class_id == class_id,
+        Grade.final_grade.isnot(None)
+    ).count() > 0
+    
+    # Get grading formula
+    formula = cls.get_grading_formula()
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            # Basic info (read-only in edit mode)
+            'subject_name': cls.effective_subject_name,
+            'subject_code': cls.effective_subject_code,
+            'units': cls.effective_units,
+            'section': cls.section,
+            'school_year': cls.school_year,
+            'semester': cls.semester,
+            
+            # Editable fields
+            'schedule': cls.schedule or '',
+            'room': cls.room or '',
+            'max_students': cls.max_students,
+            
+            # Formula
+            'grading_formula': formula,
+            
+            # Restrictions
+            'enrollment_count': enrollment_count,
+            'has_grades': has_grades,
+            'can_edit_formula': cls.can_edit_formula()
+        }
+    })
+
+
+@teacher_bp.route('/classes/<int:class_id>/update', methods=['POST'])
+@teacher_required
+def update_class(class_id):
+    """
+    Update class details (Option A: Safe fields only)
+    """
+    teacher = current_user.teacher_profile
+    
+    try:
+        # Verify class belongs to this teacher
+        cls = Class.query.filter_by(
+            id=class_id,
+            teacher_id=teacher.id
+        ).first_or_404()
+        
+        # Get form data
+        schedule = request.form.get('schedule', '').strip()
+        room = request.form.get('room', '').strip()
+        max_students = request.form.get('max_students', type=int)
+        formula_json = request.form.get('grading_formula', '').strip()
+        student_ids_str = request.form.get('student_ids', '')  # ✅ NEW: Get student roster
+        
+        # ✅ NEW: Parse student IDs
+        new_student_ids = set()
+        if student_ids_str:
+            new_student_ids = set(int(id) for id in student_ids_str.split(',') if id.strip())
+        
+        # Validate max_students
+        if max_students and max_students < 1:
+            flash('Maximum students must be at least 1.', 'error')
+            return redirect(url_for('teacher.classes'))
+        
+        # Check enrollment capacity
+        enrollment_count = Enrollment.query.filter_by(
+            class_id=class_id,
+            status='enrolled'
+        ).count()
+        
+        if max_students and max_students < enrollment_count:
+            flash(f'Cannot reduce capacity below current enrollment ({enrollment_count} students).', 'error')
+            return redirect(url_for('teacher.classes'))
+        
+        # Update safe fields
+        cls.schedule = schedule or None
+        cls.room = room or None
+        
+        if max_students:
+            cls.max_students = max_students
+        
+        # Update formula if allowed
+        if formula_json:
+            if not cls.can_edit_formula():
+                flash('Cannot edit formula after grades have been entered.', 'error')
+                return redirect(url_for('teacher.classes'))
+            
+            try:
+                # Validate formula
+                formula = json.loads(formula_json)
+                
+                if 'components' not in formula or not isinstance(formula['components'], list):
+                    raise ValueError("Invalid formula structure")
+                
+                if len(formula['components']) < 1:
+                    raise ValueError("At least one component is required")
+                
+                total_weight = sum(c.get('weight', 0) for c in formula['components'])
+                if total_weight != 100:
+                    raise ValueError(f"Component weights must total 100%, got {total_weight}%")
+                
+                for comp in formula['components']:
+                    if not comp.get('name') or comp['name'].strip() == '':
+                        raise ValueError("All components must have a name")
+                    if comp.get('weight', 0) < 0 or comp.get('weight', 0) > 100:
+                        raise ValueError("Component weights must be between 0 and 100")
+                
+                # Set formula
+                cls.grading_formula = formula_json
+                
+            except json.JSONDecodeError:
+                flash('Invalid grading formula format.', 'error')
+                return redirect(url_for('teacher.classes'))
+            except ValueError as e:
+                flash(f'Grading formula error: {str(e)}', 'error')
+                return redirect(url_for('teacher.classes'))
+        
+        # ✅ NEW: Update student roster
+        # Get currently enrolled students
+        current_enrollments = Enrollment.query.filter_by(
+            class_id=class_id,
+            status='enrolled'
+        ).all()
+        current_student_ids = set(e.student_id for e in current_enrollments)
+        
+        # Find students to add (in new list but not in current)
+        students_to_add = new_student_ids - current_student_ids
+        
+        # Find students to remove (in current but not in new list)
+        students_to_remove = current_student_ids - new_student_ids
+        
+        # Add new students
+        for student_id in students_to_add:
+            # Check if student exists
+            student = Student.query.get(student_id)
+            if student:
+                enrollment = Enrollment(
+                    student_id=student_id,
+                    class_id=class_id,
+                    status='enrolled'
+                )
+                db.session.add(enrollment)
+        
+        # Remove students (set status to 'dropped' instead of deleting)
+        for student_id in students_to_remove:
+            enrollment = Enrollment.query.filter_by(
+                class_id=class_id,
+                student_id=student_id,
+                status='enrolled'
+            ).first()
+            if enrollment:
+                # Check if student has any grades in this class
+                has_grades = Grade.query.join(Test).filter(
+                    Test.class_id == class_id,
+                    Grade.student_id == student_id,
+                    Grade.final_grade.isnot(None)
+                ).count() > 0
+                
+                if has_grades:
+                    # Don't remove - set to dropped status
+                    enrollment.status = 'dropped'
+                else:
+                    # Safe to delete - no grades exist
+                    db.session.delete(enrollment)
+        
+        db.session.commit()
+        
+        display_name = f"{cls.effective_subject_code} - {cls.effective_subject_name}"
+        flash(f'Class "{display_name}" updated successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating class: {str(e)}', 'error')
+        print(f"Error updating class: {str(e)}")
+        import traceback
+        traceback.print_exc()
+    
+    return redirect(url_for('teacher.classes'))
+
 @teacher_bp.route('/grading')
 @teacher_required
 def grading():
@@ -566,19 +806,21 @@ def grading():
     current_school_year = Config.get_current_school_year()
     current_semester = Config.get_current_semester()
     
-    # ✅ Get filters from query parameters (like classes page)
-    selected_year = request.args.get('year')
-    selected_semester = request.args.get('semester')
-    
-    # Build query
+    selected_year = request.args.get('year')      # None if not in URL
+    selected_semester = request.args.get('semester')  # None if not in URL
+
+    # Only default if param was NOT sent at all (first load)
+    if selected_year is None:
+        selected_year = current_school_year
+
+    if selected_semester is None:
+        selected_semester = current_semester
+
+    # Build query - only filter if not 'all'
     query = Class.query.filter_by(teacher_id=teacher.id)
-    
-    # ✅ Apply year filter (backend)
-    if selected_year and selected_year != 'all':
+    if selected_year != 'all':
         query = query.filter_by(school_year=selected_year)
-    
-    # ✅ Apply semester filter (backend)
-    if selected_semester and selected_semester != 'all':
+    if selected_semester != 'all':
         query = query.filter_by(semester=selected_semester)
     
     # Execute query

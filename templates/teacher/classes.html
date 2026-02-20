@@ -1170,6 +1170,53 @@
             document.getElementById('formulaContent').classList.remove('show');
             document.getElementById('formulaToggle').classList.remove('expanded');
             
+            // ✅ NEW: Re-enable all fields (in case coming from edit mode)
+            document.querySelectorAll('.form-input, .form-select').forEach(input => {
+                input.disabled = false;
+                input.style.backgroundColor = '';
+                input.style.cursor = '';
+            });
+            
+            // Re-enable formula section
+            document.querySelector('.formula-header').style.cursor = 'pointer';
+            document.querySelector('.formula-header').onclick = toggleFormulaBuilder;
+            document.querySelectorAll('.component-row input').forEach(input => {
+                input.disabled = false;
+                input.style.backgroundColor = '';
+                input.style.cursor = '';
+            });
+            document.querySelectorAll('.remove-component-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.cursor = '';
+            });
+            const addBtn = document.querySelector('.add-component-btn');
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.style.opacity = '';
+                addBtn.style.cursor = '';
+            }
+            
+            // Show student roster section
+            const rosterSection = document.querySelector('.form-group:has(#studentSearchInput)');
+            if (rosterSection) {
+                rosterSection.style.display = '';  // ✅ Always visible (in both create and edit modes)
+            }
+            
+            // Remove warning if exists
+            const warning = document.querySelector('.edit-warning');
+            if (warning) {
+                warning.remove();
+            }
+            
+            // Reset formula title
+            document.querySelector('.formula-title').innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                Grading Formula *
+            `;
+            
             document.getElementById('classModal').classList.add('show');
         }
 
@@ -1299,23 +1346,9 @@
             const year = document.getElementById('yearFilter').value;
             const semester = document.getElementById('semesterFilter').value;
             
-            // Build URL with filters
-            let url = "{{ url_for('teacher.classes') }}?";
+            // ✅ Always include both params so backend knows the explicit choice
+            let url = `{{ url_for('teacher.classes') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
             
-            // Add year parameter
-            if (year !== 'all') {
-                url += `year=${year}&`;
-            }
-            
-            // Add semester parameter
-            if (semester !== 'all') {
-                url += `semester=${semester}&`;
-            }
-            
-            // Remove trailing & or ?
-            url = url.replace(/[&?]$/, '');
-            
-            // Reload page with filters
             window.location.href = url;
         }
 
@@ -1379,6 +1412,196 @@
             
             // Update visible count
             document.getElementById('visibleCount').textContent = visibleCount;
+        }
+
+        async function editClass(classId) {
+            try {
+                // Show loading
+                const modal = document.getElementById('classModal');
+                const modalBody = modal.querySelector('.modal');
+                modalBody.style.opacity = '0.5';
+                modal.classList.add('show');
+                
+                // Fetch class data
+                const response = await fetch(`/teacher/classes/${classId}/edit-data`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    alert('Error loading class data. Please try again.');
+                    modal.classList.remove('show');
+                    return;
+                }
+                
+                const data = result.data;
+                
+                // Update modal title and action
+                document.getElementById('modalTitle').textContent = 'Edit Class';
+                document.getElementById('submitBtn').textContent = 'Update Class';
+                document.getElementById('classForm').action = `/teacher/classes/${classId}/update`;
+                
+                // Store class ID
+                document.getElementById('classId').value = classId;
+                
+                // Fill in LOCKED fields (read-only)
+                document.getElementById('subjectNameInput').value = data.subject_name;
+                document.getElementById('subjectNameInput').disabled = true;
+                document.getElementById('subjectNameInput').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('subjectNameInput').style.cursor = 'not-allowed';
+                
+                document.getElementById('subjectCodeInput').value = data.subject_code || '';
+                document.getElementById('subjectCodeInput').disabled = true;
+                document.getElementById('subjectCodeInput').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('subjectCodeInput').style.cursor = 'not-allowed';
+                
+                document.getElementById('unitsInput').value = data.units;
+                document.getElementById('unitsInput').disabled = true;
+                document.getElementById('unitsInput').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('unitsInput').style.cursor = 'not-allowed';
+                
+                document.getElementById('sectionInput').value = data.section;
+                document.getElementById('sectionInput').disabled = true;
+                document.getElementById('sectionInput').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('sectionInput').style.cursor = 'not-allowed';
+                
+                document.getElementById('schoolYearInput').value = data.school_year;
+                document.getElementById('schoolYearInput').disabled = true;
+                document.getElementById('schoolYearInput').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('schoolYearInput').style.cursor = 'not-allowed';
+                
+                document.getElementById('semesterSelect').value = data.semester;
+                document.getElementById('semesterSelect').disabled = true;
+                document.getElementById('semesterSelect').style.backgroundColor = 'var(--border-color)';
+                document.getElementById('semesterSelect').style.cursor = 'not-allowed';
+                
+                // Fill in EDITABLE fields
+                document.getElementById('scheduleInput').value = data.schedule;
+                document.getElementById('scheduleInput').disabled = false;
+                document.getElementById('scheduleInput').style.backgroundColor = '';
+                document.getElementById('scheduleInput').style.cursor = '';
+                
+                document.getElementById('roomInput').value = data.room;
+                document.getElementById('roomInput').disabled = false;
+                document.getElementById('roomInput').style.backgroundColor = '';
+                document.getElementById('roomInput').style.cursor = '';
+                
+                document.getElementById('maxStudentsInput').value = data.max_students;
+                document.getElementById('maxStudentsInput').disabled = false;
+                document.getElementById('maxStudentsInput').style.backgroundColor = '';
+                document.getElementById('maxStudentsInput').style.cursor = '';
+                
+                // Handle grading formula
+                if (data.can_edit_formula) {
+                    // Formula can be edited
+                    formulaComponents = data.grading_formula.components || [];
+                    document.getElementById('formulaContent').classList.remove('show');
+                    document.getElementById('formulaToggle').classList.remove('expanded');
+                    
+                    // Enable formula section
+                    document.querySelector('.formula-header').style.cursor = 'pointer';
+                    document.querySelector('.formula-header').onclick = toggleFormulaBuilder;
+                } else {
+                    // Formula is locked
+                    formulaComponents = data.grading_formula.components || [];
+                    renderComponents();
+                    document.getElementById('formulaContent').classList.add('show');
+                    document.getElementById('formulaToggle').classList.add('expanded');
+                    
+                    // Disable all formula inputs
+                    document.querySelectorAll('.component-row input').forEach(input => {
+                        input.disabled = true;
+                        input.style.backgroundColor = 'var(--border-color)';
+                        input.style.cursor = 'not-allowed';
+                    });
+                    
+                    document.querySelectorAll('.remove-component-btn').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.3';
+                        btn.style.cursor = 'not-allowed';
+                    });
+                    
+                    document.querySelector('.add-component-btn').disabled = true;
+                    document.querySelector('.add-component-btn').style.opacity = '0.5';
+                    document.querySelector('.add-component-btn').style.cursor = 'not-allowed';
+                    
+                    document.getElementById('passingGradeInput').disabled = true;
+                    document.getElementById('passingGradeInput').style.backgroundColor = 'var(--border-color)';
+                    document.getElementById('passingGradeInput').style.cursor = 'not-allowed';
+                    
+                    // Change header to indicate locked
+                    document.querySelector('.formula-header').style.cursor = 'default';
+                    document.querySelector('.formula-header').onclick = null;
+                    
+                    // Add lock icon and message
+                    const formulaTitle = document.querySelector('.formula-title');
+                    if (!formulaTitle.querySelector('.lock-icon')) {
+                        formulaTitle.innerHTML = `
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Grading Formula (Locked - Grades Exist)
+                        `;
+                    }
+                }
+                
+                // ✅ SHOW student roster section in edit mode (allow adding/removing students)
+                document.querySelector('.form-group:has(#studentSearchInput)').style.display = '';
+                
+                // ✅ Load currently enrolled students
+                await loadEnrolledStudents(classId);
+                
+                // Add warning message
+                const formElement = document.getElementById('classForm');
+                let warningDiv = formElement.querySelector('.edit-warning');
+                if (!warningDiv) {
+                    warningDiv = document.createElement('div');
+                    warningDiv.className = 'edit-warning';
+                    warningDiv.style.cssText = 'background: rgba(255, 184, 0, 0.1); border: 1px solid rgba(255, 184, 0, 0.3); color: #ffb800; padding: 12px; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.85rem;';
+                    warningDiv.innerHTML = `
+                        <strong>⚠️ Edit Mode:</strong> Some fields are locked because students are enrolled${data.has_grades ? ' and grades have been entered' : ''}.
+                        You can only edit: Schedule, Room, and Capacity${data.can_edit_formula ? ', Formula' : ''}.
+                    `;
+                    formElement.insertBefore(warningDiv, formElement.firstChild);
+                }
+                
+                // Restore modal opacity
+                modalBody.style.opacity = '1';
+                
+            } catch (error) {
+                console.error('Error loading class data:', error);
+                alert('Error loading class data. Please try again.');
+                document.getElementById('classModal').classList.remove('show');
+            }
+        }
+
+        // ============================================================================
+        // HELPER FUNCTION: Load enrolled students for edit mode
+        // ============================================================================
+
+        async function loadEnrolledStudents(classId) {
+            try {
+                // Fetch enrolled students
+                const response = await fetch(`/teacher/classes/${classId}/enrolled-students`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('Error loading enrolled students');
+                    return;
+                }
+                
+                // Clear and populate selectedStudents array
+                selectedStudents = result.students.map(s => ({
+                    id: s.id,
+                    firstName: s.first_name,
+                    lastName: s.last_name,
+                    studentNumber: s.student_number
+                }));
+                
+                // Update roster builder display
+                updateRosterBuilder();
+                
+            } catch (error) {
+                console.error('Error loading enrolled students:', error);
+            }
         }
     </script>
 </body>
