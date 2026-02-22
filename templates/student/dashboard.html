@@ -14,17 +14,13 @@
             --text-main: #c9d1d9;
             --text-dim: #8b949e;
             --border-color: #30363d;
-            --success-green: #238636;
+            --success-green: #3fb950;
             --warning-yellow: #d29922;
+            --danger-red: #f85149;
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-main);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
 
         body {
             background-color: var(--bg-color);
@@ -33,7 +29,7 @@
             min-height: 100vh;
         }
 
-        /* --- Sidebar Navigation --- */
+        /* --- Sidebar --- */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-color);
@@ -56,15 +52,9 @@
             margin-bottom: 2.5rem;
         }
 
-        .logo svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--accent-blue);
-        }
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-blue); }
 
-        .nav-group {
-            margin-bottom: 2rem;
-        }
+        .nav-group { margin-bottom: 2rem; }
 
         .nav-label {
             font-size: 0.7rem;
@@ -88,9 +78,7 @@
             transition: background 0.2s;
         }
 
-        .nav-item:hover {
-            background-color: var(--border-color);
-        }
+        .nav-item:hover { background-color: var(--border-color); }
 
         .nav-item.active {
             background-color: rgba(88, 166, 255, 0.1);
@@ -98,58 +86,92 @@
             font-weight: 600;
         }
 
-        .nav-item.logout {
-            margin-top: auto;
-            color: #f85149;
-        }
+        .nav-item.logout { color: var(--danger-red); }
 
-        /* --- Main Content Area --- */
+        .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+
+        /* --- Main Content --- */
         .main-content {
             flex: 1;
             padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            overflow-y: auto;
         }
 
-        /* Header Section */
+        /* --- Header --- */
         .header-section {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .student-profile {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
+        .student-profile { display: flex; align-items: center; gap: 1.5rem; }
 
         .profile-photo {
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             background: var(--card-color);
             border: 2px solid var(--border-color);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            color: var(--text-dim);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            flex-shrink: 0;
         }
 
-        .welcome-msg h1 {
-            font-size: 1.75rem;
-            margin-bottom: 0.25rem;
+        .welcome-msg h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+
+        .student-meta { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .student-meta {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            line-height: 1.6;
+        .filter-select {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
         }
 
-        /* Grid System */
+        .filter-select:focus { outline: none; border-color: var(--accent-blue); }
+
+        .custom-year-input {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 120px;
+        }
+
+        .custom-year-input::placeholder { color: var(--text-dim); }
+
+        .filter-btn {
+            background: var(--accent-blue);
+            color: #0d1117;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* --- Dashboard Grid --- */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -163,59 +185,83 @@
             padding: 1.5rem;
         }
 
-        /* Card A: Academic Overview */
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 1.25rem;
+        }
+
+        /* --- Academic Overview Card --- */
         .academic-overview {
             grid-column: span 4;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
 
-        .gpa-display {
-            text-align: center;
-            margin: 1.5rem 0;
-        }
+        .gpa-display { text-align: center; margin: 1.25rem 0; }
 
         .gpa-value {
             font-size: 3.5rem;
             font-weight: 800;
             color: var(--accent-blue);
             line-height: 1;
+            transition: all 0.2s ease;
         }
 
-        .gpa-label {
-            font-size: 0.85rem;
+        .gpa-sublabel {
+            font-size: 0.75rem;
             color: var(--text-dim);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            margin-top: 6px;
         }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 1rem 0;
+        }
+
+        .cumulative-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .cumulative-label { color: var(--text-dim); }
+
+        .cumulative-value { font-weight: 700; font-size: 1rem; }
 
         .gpa-toggle {
             display: flex;
             background: var(--bg-color);
             border-radius: 6px;
             padding: 4px;
-            margin-top: 1rem;
         }
 
         .toggle-btn {
             flex: 1;
-            font-size: 0.7rem;
-            padding: 6px;
+            font-size: 0.75rem;
+            padding: 7px;
             border: none;
             background: transparent;
             color: var(--text-dim);
             cursor: pointer;
             border-radius: 4px;
+            transition: all 0.15s;
         }
 
         .toggle-btn.active {
             background: var(--card-color);
-            color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            color: var(--text-main);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        /* Card D: Quick Stats */
+        /* --- Quick Stats --- */
         .quick-stats {
             grid-column: span 8;
             display: grid;
@@ -223,37 +269,48 @@
             gap: 1rem;
         }
 
-        .stat-item {
+        .stat-card {
             background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             padding: 1.25rem;
-            border-radius: 6px;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .stat-val {
-            display: block;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
             margin-bottom: 4px;
+            line-height: 1;
         }
 
         .stat-desc {
             font-size: 0.75rem;
             color: var(--text-dim);
+            margin-top: 4px;
         }
 
-        .status-badge {
-            background: var(--success-green);
-            color: white;
-            padding: 2px 8px;
+        /* Standing card spans full width of its row */
+        .standing-card {
+            grid-column: span 3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .semester-badge {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
             border-radius: 12px;
-            font-size: 0.7rem;
         }
 
-        /* Card B: Enrolled Classes */
-        .classes-card {
-            grid-column: span 12;
-        }
+        /* --- Enrolled Classes Table --- */
+        .classes-card { grid-column: span 12; }
 
         .card-header {
             display: flex;
@@ -262,98 +319,109 @@
             margin-bottom: 1.25rem;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .card-header-count {
+            font-size: 0.8rem;
+            color: var(--text-dim);
         }
+
+        table { width: 100%; border-collapse: collapse; }
 
         th {
             text-align: left;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-dim);
             text-transform: uppercase;
-            padding: 12px;
+            letter-spacing: 0.05em;
+            padding: 10px 12px;
             border-bottom: 1px solid var(--border-color);
         }
 
         td {
             padding: 12px;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .grade-pill {
-            font-weight: 700;
-            color: var(--accent-blue);
-        }
+        tr:last-child td { border-bottom: none; }
 
-        /* Card C: Recent Grades */
-        .recent-grades {
-            grid-column: span 12;
-        }
+        tr:hover td { background: rgba(255,255,255,0.02); }
 
-        .grade-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .grade-pill { font-weight: 700; color: var(--accent-blue); }
+
+        .grade-pill.passing { color: var(--success-green); }
+        .grade-pill.failing { color: var(--danger-red); }
+
+        /* --- Recent Grades --- */
+        .recent-grades { grid-column: span 12; }
+
+        .grade-list { display: flex; flex-direction: column; gap: 8px; }
 
         .grade-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 12px 14px;
             background: var(--card-color);
             border-radius: 6px;
             border: 1px solid var(--border-color);
         }
+
+        .grade-item-title { font-weight: 600; font-size: 0.875rem; }
+
+        .grade-item-meta { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+        .grade-item-score { font-weight: 700; color: var(--accent-blue); }
 
         .view-all-btn {
             display: block;
             width: 100%;
             text-align: center;
             padding: 10px;
-            margin-top: 1.5rem;
+            margin-top: 1rem;
             background: transparent;
             border: 1px solid var(--border-color);
             color: var(--accent-blue);
             border-radius: 6px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            transition: background 0.2s;
         }
 
-        .view-all-btn:hover {
-            background: rgba(88, 166, 255, 0.05);
-        }
-
-        /* Icon Helper */
-        .icon {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
-        }
+        .view-all-btn:hover { background: rgba(88, 166, 255, 0.05); }
 
         .empty-state {
             text-align: center;
-            padding: 2rem;
+            padding: 2.5rem;
             color: var(--text-dim);
         }
 
-        @media (max-width: 1024px) {
-            .academic-overview, .quick-stats { grid-column: span 12; }
-            .sidebar { width: 80px; padding: 1rem; }
+        .empty-state p:last-child { font-size: 0.8rem; margin-top: 6px; }
+
+        @media (max-width: 1100px) {
+            .academic-overview { grid-column: span 12; }
+            .quick-stats { grid-column: span 12; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 72px; padding: 1rem 0.75rem; }
             .nav-label, .nav-item span, .logo span { display: none; }
+            .nav-item { justify-content: center; }
+            .main-content { padding: 1.25rem; }
+            .quick-stats { grid-template-columns: repeat(2, 1fr); }
+            .standing-card { grid-column: span 2; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar Navigation -->
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">
-            <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none">
+                <path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                <path stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            </svg>
             <span>Acadify</span>
         </div>
 
@@ -385,7 +453,7 @@
             </a>
         </div>
 
-        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout" style="margin-top: auto;">
             <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             <span>Logout</span>
         </a>
@@ -393,74 +461,109 @@
 
     <!-- Main Content -->
     <main class="main-content">
+
         <!-- Header -->
         <div class="header-section">
             <div class="student-profile">
-                <div class="profile-photo">{{ student.first_name[0] }}</div>
+                <div class="profile-photo">{{ student.first_name[0] | upper }}</div>
                 <div class="welcome-msg">
                     <h1>Welcome back, {{ student.first_name }}!</h1>
                     <div class="student-meta">
                         <p>Student ID: <strong>{{ student.student_number }}</strong></p>
-                        <p>{{ student.program }} • {{ student.year_level }}, Section {{ student.section if student.section else 'N/A' }}</p>
+                        <p>{{ student.program }} </p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <select class="filter-select" id="semesterFilter" onchange="applyFilters()">
+                    <option value="1st Semester" {% if selected_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                    <option value="2nd Semester" {% if selected_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                    <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
+                </select>
+
+                <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text"
+                       class="custom-year-input"
+                       id="customYearInput"
+                       placeholder="e.g. 2020-2021"
+                       title="Jump to a specific year">
+                <button class="filter-btn" onclick="jumpToCustomYear()">Go</button>
             </div>
         </div>
 
         <div class="dashboard-grid">
+
             <!-- Academic Overview -->
             <div class="card academic-overview">
-                <h3 style="font-size: 1rem;">Academic Overview</h3>
+                <div class="card-title">Academic Overview</div>
+
                 <div class="gpa-display">
-                    <div class="gpa-value" id="semester-gpa-display">
-                        {{ "%.2f"|format(semester_gpa) if semester_gpa else "—" }}
+                    <div class="gpa-value" id="semGpaDisplay">
+                        {{ "%.2f"|format(semester_gpa_weighted) if semester_gpa_weighted else "—" }}
                     </div>
-                    <div class="gpa-label">Current Sem GPA</div>
+                    <div class="gpa-sublabel" id="semGpaLabel">
+                        {{ selected_semester }}, {{ selected_year }} &bull; Weighted
+                    </div>
                 </div>
-                <div style="font-size: 0.85rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span class="nav-label">Cumulative GPA</span>
-                        <span style="font-weight: 600;" id="cumulative-gpa-display">
-                            {{ "%.2f"|format(cumulative_gpa) if cumulative_gpa else "—" }}
-                        </span>
-                    </div>
-                    <div class="gpa-toggle">
-                        <button class="toggle-btn active" data-method="weighted">Weighted</button>
-                        <button class="toggle-btn" data-method="simple">Average</button>
-                        <button class="toggle-btn" data-method="major">Majors</button>
-                    </div>
+
+                <hr class="divider">
+
+                <div class="cumulative-row">
+                    <span class="cumulative-label">Cumulative GPA</span>
+                    <span class="cumulative-value">
+                        {{ "%.2f"|format(cumulative_gpa) if cumulative_gpa else "—" }}
+                    </span>
+                </div>
+
+                <div class="gpa-toggle">
+                    <button class="toggle-btn active" data-method="weighted">Weighted</button>
+                    <button class="toggle-btn" data-method="simple">Average</button>
                 </div>
             </div>
 
             <!-- Quick Stats -->
             <div class="quick-stats">
-                <div class="card stat-item">
-                    <span class="stat-val">{{ total_units }}</span>
-                    <span class="stat-desc">Units Enrolled</span>
+                <!-- Units Enrolled -->
+                <div class="stat-card">
+                    <div class="stat-val">{{ total_units }}</div>
+                    <div class="stat-desc">Units Enrolled</div>
                 </div>
-                <div class="card stat-item">
-                    <span class="stat-val">{{ total_units_completed if total_units_completed else 0 }} / {{ total_program_units if total_program_units else "?" }}</span>
-                    <span class="stat-desc">Units Completed</span>
-                </div>
-                <div class="card stat-item">
-                    <span class="stat-val">{{ passing_rate if passing_rate else "—" }}</span>
-                    <span class="stat-desc">Classes Passed</span>
-                </div>
-                <div class="card stat-item" style="grid-column: span 3; display: flex; align-items: center; justify-content: space-between; text-align: left;">
-                    <div>
-                        <span class="stat-val" style="font-size: 1.1rem;">Good Standing</span>
-                        <span class="stat-desc">Academic Standing</span>
+
+                <!-- Graded -->
+                <div class="stat-card">
+                    <div class="stat-val">
+                        <span>{{ graded_count }}</span>
+                        <span style="font-size: 1rem; color: var(--text-dim); font-weight: 400;"> / {{ total_count }}</span>
                     </div>
-                    <span class="status-badge">Active</span>
+                    <div class="stat-desc">Subjects Graded</div>
+                </div>
+
+                <!-- Academic Standing (spans full row) -->
+                <div class="stat-card standing-card">
+                    <div>
+                        <div class="stat-val" style="font-size: 1.15rem; color: {{ standing_color }};">
+                            {{ academic_standing }}
+                        </div>
+                        <div class="stat-desc">Academic Standing</div>
+                    </div>
+                    <span class="semester-badge">{{ selected_semester }}, {{ selected_year }}</span>
                 </div>
             </div>
 
             <!-- Enrolled Classes -->
             <div class="card classes-card">
                 <div class="card-header">
-                    <h3>Current Enrolled Classes</h3>
-                    <span class="nav-label">Total: {{ enrolled_classes|length }} classes</span>
+                    <div class="card-title" style="margin-bottom: 0;">Enrolled Classes</div>
+                    <span class="card-header-count">{{ enrolled_classes | length }} class{{ 'es' if enrolled_classes | length != 1 else '' }}</span>
                 </div>
+
                 {% if enrolled_classes %}
                 <table>
                     <thead>
@@ -475,15 +578,22 @@
                     </thead>
                     <tbody>
                         {% for cls in enrolled_classes %}
+                        {% set enrollment = enrollment_map.get(cls.id) %}
                         <tr>
-                            <td>{{ cls.subject.code }}</td>
-                            <td>{{ cls.subject.name }}</td>
+                            <td>{{ cls.effective_subject_code }}</td>
+                            <td>{{ cls.effective_subject_name }}</td>
                             <td>{{ cls.section if cls.section else '—' }}</td>
                             <td>{{ cls.schedule if cls.schedule else '—' }}</td>
-                            <td>{{ cls.units }}</td>
-                            <td class="grade-pill">
-                                {% set enrollment = cls.enrollments.filter_by(student_id=student.id).first() %}
-                                {{ "%.2f"|format(enrollment.final_grade) if enrollment and enrollment.final_grade else "—" }}
+                            <td>{{ cls.effective_units }}</td>
+                            <td>
+                                {% if enrollment and enrollment.final_grade is not none %}
+                                    {% set g = enrollment.final_grade %}
+                                    <span class="grade-pill {% if g <= 3.0 %}passing{% else %}failing{% endif %}">
+                                        {{ "%.2f"|format(g) }}
+                                    </span>
+                                {% else %}
+                                    <span style="color: var(--text-dim);">—</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -491,8 +601,8 @@
                 </table>
                 {% else %}
                 <div class="empty-state">
-                    <p>No classes enrolled for {{ current_semester }} ({{ current_school_year }})</p>
-                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Contact your registrar to enroll in classes.</p>
+                    <p>No classes enrolled for {{ selected_semester }}, {{ selected_year }}.</p>
+                    <p>Contact your registrar to enroll in classes.</p>
                 </div>
                 {% endif %}
             </div>
@@ -500,23 +610,27 @@
             <!-- Recent Grades -->
             <div class="card recent-grades">
                 <div class="card-header">
-                    <h3>Recent Grades</h3>
+                    <div class="card-title" style="margin-bottom: 0;">Recent Grades</div>
                 </div>
+
                 {% if recent_grades %}
                 <div class="grade-list">
                     {% for grade in recent_grades %}
+                    {% if grade.test and grade.test.class_ %}
                     <div class="grade-item">
                         <div>
-                            <div style="font-weight: 600;">{{ grade.test.title }}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-dim);">
-                                {{ grade.test.class_.subject.code }} • 
+                            <div class="grade-item-title">{{ grade.test.title }}</div>
+                            <div class="grade-item-meta">
+                                {{ grade.test.class_.effective_subject_code }}
+                                &bull;
                                 {{ grade.graded_at.strftime('%b %d, %Y') if grade.graded_at else 'Not dated' }}
                             </div>
                         </div>
-                        <div style="color: var(--accent-blue); font-weight: 700;">
-                            {{ "%.2f"|format(grade.final_grade) if grade.final_grade else "—" }}
+                        <div class="grade-item-score">
+                            {{ "%.2f"|format(grade.final_grade) if grade.final_grade is not none else "—" }}
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
                 {% else %}
@@ -524,48 +638,70 @@
                     <p>No grades available yet.</p>
                 </div>
                 {% endif %}
-                <a href="{{ url_for('student.my_grades') }}" class="view-all-btn">View All Grades & Progress</a>
+
+                <a href="{{ url_for('student.my_grades') }}" class="view-all-btn">View All Grades</a>
             </div>
+
         </div>
     </main>
 
     <script>
-        // GPA Calculation Method Toggle with Backend
-        const toggleBtns = document.querySelectorAll('.toggle-btn');
-        const semesterGpaDisplay = document.getElementById('semester-gpa-display');
-        const cumulativeGpaDisplay = document.getElementById('cumulative-gpa-display');
-        
-        // GPA values from backend (different calculation methods)
+        // GPA data from backend
         const gpaData = {
-            semester: {
-                weighted: {{ "%.2f"|format(semester_gpa) if semester_gpa else 0 }},
-                simple: {{ "%.2f"|format(semester_gpa_simple) if semester_gpa_simple else 0 }},
-                major: {{ "%.2f"|format(semester_gpa_major) if semester_gpa_major else 0 }}
-            },
-            cumulative: {
-                weighted: {{ "%.2f"|format(cumulative_gpa) if cumulative_gpa else 0 }},
-                simple: {{ "%.2f"|format(cumulative_gpa_simple) if cumulative_gpa_simple else 0 }},
-                major: {{ "%.2f"|format(cumulative_gpa_major) if cumulative_gpa_major else 0 }}
-            }
+            weighted: {{ semester_gpa_weighted | tojson }},
+            simple:   {{ semester_gpa_simple | tojson }}
         };
-        
-        toggleBtns.forEach(btn => {
+
+        const semGpaDisplay = document.getElementById('semGpaDisplay');
+        const semGpaLabel   = document.getElementById('semGpaLabel');
+        const semLabel      = "{{ selected_semester }}, {{ selected_year }}";
+
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Update active state
-                toggleBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
-                // Get selected method
+
                 const method = btn.dataset.method;
-                
-                // Update displays
-                const semValue = gpaData.semester[method];
-                const cumValue = gpaData.cumulative[method];
-                
-                semesterGpaDisplay.textContent = semValue > 0 ? semValue.toFixed(2) : '—';
-                cumulativeGpaDisplay.textContent = cumValue > 0 ? cumValue.toFixed(2) : '—';
+                const val = gpaData[method];
+
+                semGpaDisplay.textContent = (val !== null && val > 0) ? val.toFixed(2) : '—';
+                semGpaLabel.textContent = semLabel + ' \u2022 ' + (method === 'weighted' ? 'Weighted' : 'Simple Average');
             });
         });
+
+        // --- Semester/Year Filtering ---
+        function applyFilters() {
+            const year     = document.getElementById('yearFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.dashboard') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        function jumpToCustomYear() {
+            const input = document.getElementById('customYearInput');
+            const year  = input.value.trim();
+
+            const yearPattern = /^\d{4}-\d{4}$/;
+            if (!yearPattern.test(year)) {
+                alert('Please enter a valid academic year format: YYYY-YYYY\nExample: 2020-2021');
+                input.focus();
+                return;
+            }
+
+            const [start, end] = year.split('-').map(Number);
+            if (end !== start + 1) {
+                alert('Years must be consecutive.\nExample: 2025-2026');
+                input.focus();
+                return;
+            }
+
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.dashboard') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        document.getElementById('customYearInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') jumpToCustomYear();
+        });
     </script>
+
 </body>
 </html>

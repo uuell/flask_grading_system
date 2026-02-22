@@ -334,7 +334,6 @@
                         <input type="text" 
                                placeholder="Subject Name" 
                                value="{{ class_data.subject_name }}" 
-                               readonly
                                style="background: var(--bg-color);">
                         <input type="number" 
                                step="0.25" 
@@ -347,7 +346,6 @@
                                placeholder="3" 
                                class="unit-input" 
                                value="{{ class_data.units }}"
-                               readonly
                                style="background: var(--bg-color);">
                         <button class="remove-btn" onclick="this.parentElement.remove(); calculateGPA();">&times;</button>
                     </div>
@@ -455,7 +453,7 @@
                 const g = parseFloat(grades[i].value);
                 const u = parseFloat(units[i].value);
 
-                if (!isNaN(g) && !isNaN(u) && g >= 1.0 && g <= 5.0) {
+                if (!isNaN(g) && !isNaN(u) && g >= 1.0 && g <= 5.0 && u > 0) {
                     totalWeightedGrades += (g * u);
                     totalUnits += u;
                 }

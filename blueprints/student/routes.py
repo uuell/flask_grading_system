@@ -3,9 +3,10 @@ blueprints/student/routes.py - Student Blueprint
 Handles student-specific routes: dashboard, grades, classes, profile.
 """
 
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from models import Student, Class, Enrollment, Grade, Test
+from extensions import db, bcrypt
 from config import Config
 
 # Initialize the blueprint for student-related routes
@@ -34,70 +35,118 @@ def student_required(f):
 def dashboard():
     """
     Renders the Student Dashboard page.
-    Main landing page showing academic overview, enrolled classes, and recent grades.
+    Supports ?year= and ?semester= query params for filtering.
+    Defaults to current semester/year if not provided.
     """
-    # Get student profile
     student = current_user.student_profile
-    
-    # Get current semester info from config
+
+    # --- Current config values ---
     current_school_year = Config.get_current_school_year()
     current_semester = Config.get_current_semester()
-    
-    # Get enrolled classes for current semester
-    enrolled_classes = Class.query.join(Enrollment).filter(
-        Enrollment.student_id == student.id,
-        Class.school_year == current_school_year,
-        Class.semester == current_semester
+
+    # --- Filtering (same pattern as teacher dashboard) ---
+    selected_year = request.args.get('year')
+    selected_semester = request.args.get('semester')
+
+    if not selected_year or selected_year == 'all':
+        selected_year = current_school_year
+    if not selected_semester or selected_semester == 'all':
+        selected_semester = current_semester
+
+    # --- Build available years from student's enrollment history ---
+    from datetime import datetime as dt
+    all_enrollments = Enrollment.query.filter_by(
+        student_id=student.id
+    ).join(Class).with_entities(Class.school_year).distinct().all()
+
+    actual_years = set(row.school_year for row in all_enrollments)
+    current_year_num = dt.now().year
+    buffer_years = {f"{y}-{y+1}" for y in range(current_year_num - 3, current_year_num + 2)}
+    available_years = sorted(list(actual_years | buffer_years), reverse=True)
+
+    # --- Enrolled classes for selected semester/year ---
+    enrollments = Enrollment.query.filter_by(
+        student_id=student.id
+    ).join(Class).filter(
+        Class.school_year == selected_year,
+        Class.semester == selected_semester
     ).all()
-    
-    # Get recent grades (last 5)
+
+    enrolled_classes = [e.class_ for e in enrollments]
+
+    # Build enrollment lookup dict: class_id -> enrollment
+    # This avoids querying the DB inside the template
+    enrollment_map = {e.class_id: e for e in enrollments}
+
+    # --- Recent grades (global, not filtered by semester) ---
     recent_grades = Grade.query.filter_by(student_id=student.id)\
         .filter(Grade.final_grade.isnot(None))\
+        .join(Test)\
+        .join(Class)\
         .order_by(Grade.graded_at.desc())\
         .limit(5)\
         .all()
-    
-    # Calculate GPA with all three methods
-    semester_gpa = student.get_semester_gpa(
-        current_school_year, current_semester, 'weighted'
+
+    # --- Semester GPA (both methods, for selected semester) ---
+    semester_gpa_weighted = student.get_semester_gpa(
+        selected_year, selected_semester, 'weighted'
     )
     semester_gpa_simple = student.get_semester_gpa(
-        current_school_year, current_semester, 'simple'
+        selected_year, selected_semester, 'simple'
     )
-    semester_gpa_major = student.get_semester_gpa(
-        current_school_year, current_semester, 'major_only'
-    )
-    
+
+    # --- Cumulative GPA (always weighted, always global) ---
     cumulative_gpa = student.get_cumulative_gpa('weighted')
-    cumulative_gpa_simple = student.get_cumulative_gpa('simple')
-    cumulative_gpa_major = student.get_cumulative_gpa('major_only')
-    
-    # Calculate total units enrolled
+
+    # --- Quick Stats ---
+
+    # Units enrolled this semester
     total_units = sum(cls.effective_units for cls in enrolled_classes)
-    
-    # Placeholder values for now (you can calculate these later)
-    total_units_completed = None
-    total_program_units = None
-    passing_rate = None
-    
+
+    # Graded count: subjects with a final_grade in enrollment vs total enrolled
+    graded_count = sum(1 for e in enrollments if e.final_grade is not None)
+    total_count = len(enrollments)
+
+    # Academic standing from cumulative GPA
+    if cumulative_gpa:
+        if cumulative_gpa <= 1.75:
+            academic_standing = "Dean's Lister"
+            standing_color = "var(--success-green)"
+        elif cumulative_gpa <= 2.5:
+            academic_standing = "Good Standing"
+            standing_color = "var(--success-green)"
+        elif cumulative_gpa <= 3.0:
+            academic_standing = "Satisfactory"
+            standing_color = "var(--text-main)"
+        else:
+            academic_standing = "Probation"
+            standing_color = "var(--danger-red)"
+    else:
+        academic_standing = "Good Standing"
+        standing_color = "var(--text-main)"
+
     return render_template(
         'student/dashboard.html',
         student=student,
         enrolled_classes=enrolled_classes,
+        enrollment_map=enrollment_map,
         recent_grades=recent_grades,
-        semester_gpa=semester_gpa,
+        semester_gpa_weighted=semester_gpa_weighted,
         semester_gpa_simple=semester_gpa_simple,
-        semester_gpa_major=semester_gpa_major,
         cumulative_gpa=cumulative_gpa,
-        cumulative_gpa_simple=cumulative_gpa_simple,
-        cumulative_gpa_major=cumulative_gpa_major,
         total_units=total_units,
-        total_units_completed=total_units_completed,
-        total_program_units=total_program_units,
-        passing_rate=passing_rate,
+        graded_count=graded_count,
+        total_count=total_count,
+        academic_standing=academic_standing,
+        standing_color=standing_color,
+        available_years=available_years,
+        selected_year=selected_year,
+        selected_semester=selected_semester,
         current_school_year=current_school_year,
         current_semester=current_semester
     )
+
+
 
 
 @student_bp.route('/profile')
@@ -176,37 +225,88 @@ def profile():
 def my_classes():
     """
     Renders the 'My Classes' page.
-    Shows all enrolled classes with details (current and past semesters).
+    Supports ?year= and ?semester= query params for filtering.
+    Defaults to current semester/year if not provided.
     """
     student = current_user.student_profile
-    
-    # Get current semester classes
+
+    # --- Current config values ---
     current_school_year = Config.get_current_school_year()
     current_semester = Config.get_current_semester()
-    
-    current_classes = Class.query.join(Enrollment).filter(
-        Enrollment.student_id == student.id,
-        Class.school_year == current_school_year,
-        Class.semester == current_semester,
-        Enrollment.status == 'enrolled'
+
+    # --- Filtering ---
+    selected_year = request.args.get('year')
+    selected_semester = request.args.get('semester')
+
+    if not selected_year or selected_year == 'all':
+        selected_year = current_school_year
+    if not selected_semester or selected_semester == 'all':
+        selected_semester = current_semester
+
+    # --- Build available years from student enrollment history ---
+    from datetime import datetime as dt
+    all_enrollments = Enrollment.query.filter_by(
+        student_id=student.id
+    ).join(Class).with_entities(Class.school_year).distinct().all()
+
+    actual_years = set(row.school_year for row in all_enrollments)
+    current_year_num = dt.now().year
+    buffer_years = {f"{y}-{y+1}" for y in range(current_year_num - 3, current_year_num + 2)}
+    available_years = sorted(list(actual_years | buffer_years), reverse=True)
+
+    # --- Get enrollments for selected semester/year ---
+    enrollments = Enrollment.query.filter_by(
+        student_id=student.id
+    ).join(Class).filter(
+        Class.school_year == selected_year,
+        Class.semester == selected_semester
     ).all()
-    
-    # Calculate stats
+
+    current_classes = [e.class_ for e in enrollments]
+
+    # Build enrollment map: class_id -> enrollment
+    enrollment_map = {e.class_id: e for e in enrollments}
+
+    # --- Stats ---
     total_subjects = len(current_classes)
     total_units = sum(cls.effective_units for cls in current_classes)
-    lab_hours = sum(cls.effective_units * 1.5 for cls in current_classes if cls.subject and ('Lab' in cls.subject.name or cls.subject.code.endswith('L')))
-    
-    # Check for schedule conflicts (simplified - checks if any two classes overlap)
-    has_conflicts = False  # You can implement conflict detection logic later
-    
+
+    # Graded count: enrollments with a final_grade set
+    graded_count = sum(1 for e in enrollments if e.final_grade is not None)
+
+    # Academic standing from cumulative GPA
+    cumulative_gpa = student.get_cumulative_gpa('weighted')
+
+    if cumulative_gpa:
+        if cumulative_gpa <= 1.75:
+            academic_standing = "Dean's Lister"
+            standing_color = "var(--success-green)"
+        elif cumulative_gpa <= 2.5:
+            academic_standing = "Good Standing"
+            standing_color = "var(--success-green)"
+        elif cumulative_gpa <= 3.0:
+            academic_standing = "Satisfactory"
+            standing_color = "var(--text-main)"
+        else:
+            academic_standing = "Probation"
+            standing_color = "var(--danger-red)"
+    else:
+        academic_standing = "Good Standing"
+        standing_color = "var(--text-main)"
+
     return render_template(
         'student/my_classes.html',
         student=student,
         current_classes=current_classes,
+        enrollment_map=enrollment_map,
         total_subjects=total_subjects,
         total_units=total_units,
-        lab_hours=lab_hours,
-        has_conflicts=has_conflicts,
+        graded_count=graded_count,
+        academic_standing=academic_standing,
+        standing_color=standing_color,
+        available_years=available_years,
+        selected_year=selected_year,
+        selected_semester=selected_semester,
         current_school_year=current_school_year,
         current_semester=current_semester
     )
@@ -216,89 +316,113 @@ def my_classes():
 @student_required
 def my_grades():
     """
-    Renders the academic records and grades page.
-    Shows detailed grade breakdown per subject.
+    Renders the My Grades page.
+    Shows all enrolled classes for the selected semester as individual
+    spreadsheet cards, each mirroring the teacher's grading table.
+    Supports ?year= and ?semester= query params for filtering.
+    
+    ✅ FIXED: Properly structures component data for modal display
     """
     student = current_user.student_profile
-    
-    # Get all grades grouped by class
+
+    # --- Current config values ---
     current_school_year = Config.get_current_school_year()
     current_semester = Config.get_current_semester()
-    
-    # Get all enrolled classes for current semester with their grades
-    current_classes_with_grades = []
-    
+
+    # --- Filtering ---
+    selected_year = request.args.get('year')
+    selected_semester = request.args.get('semester')
+
+    if not selected_year or selected_year == 'all':
+        selected_year = current_school_year
+    if not selected_semester or selected_semester == 'all':
+        selected_semester = current_semester
+
+    # --- Build available years from student enrollment history ---
+    from datetime import datetime as dt
+    all_enrollments_years = Enrollment.query.filter_by(
+        student_id=student.id
+    ).join(Class).with_entities(Class.school_year).distinct().all()
+
+    actual_years = set(row.school_year for row in all_enrollments_years)
+    current_year_num = dt.now().year
+    buffer_years = {f"{y}-{y+1}" for y in range(current_year_num - 3, current_year_num + 2)}
+    available_years = sorted(list(actual_years | buffer_years), reverse=True)
+
+    # --- Get enrollments for selected semester/year ---
     enrollments = Enrollment.query.filter_by(
         student_id=student.id
     ).join(Class).filter(
-        Class.school_year == current_school_year,
-        Class.semester == current_semester
+        Class.school_year == selected_year,
+        Class.semester == selected_semester
     ).all()
-    
+
+    # --- Build per-class grading data ---
+    classes_data = []
+
     for enrollment in enrollments:
         cls = enrollment.class_
-        
-        # Get all grades for this class
-        grades_for_class = Grade.query.filter_by(
-            student_id=student.id
-        ).join(Test).filter(
-            Test.class_id == cls.id
-        ).all()
-        
-        # Calculate midterm and finals (example logic - adjust as needed)
-        midterm_grade = None
-        finals_grade = None
-        
-        for grade in grades_for_class:
-            if 'midterm' in grade.test.title.lower():
-                midterm_grade = grade.final_grade
-            elif 'final' in grade.test.title.lower():
-                finals_grade = grade.final_grade
-        
-        current_classes_with_grades.append({
+
+        # Get all tests for this class
+        tests = Test.query.filter_by(
+            class_id=cls.id
+        ).order_by(Test.test_date, Test.created_at).all()
+
+        # ✅ FIX: Get grading formula FIRST
+        formula = cls.get_grading_formula()
+        formula_components = formula.get('components', []) if formula else []
+
+        # Build component weight lookup: component_name -> weight
+        component_weights = {c['name']: c['weight'] for c in formula_components}
+
+        # ✅ FIX: Get student's grades with proper structure
+        test_grades = {}
+        for test in tests:
+            grade = Grade.query.filter_by(
+                test_id=test.id,
+                student_id=student.id
+            ).first()
+            
+            if grade:
+                # Get component scores from the grade
+                component_scores = grade.get_component_scores()
+                
+                test_grades[test.id] = {
+                    'grade_obj': grade,  # The actual Grade object
+                    'component_scores': component_scores,  # Dict of {component_name: [items]}
+                    'final_grade': grade.final_grade,
+                    'calculated_percentage': grade.calculated_percentage,
+                    'is_overridden': grade.is_overridden,
+                    'override_reason': grade.override_reason
+                }
+            else:
+                # No grade yet - still provide empty structure
+                test_grades[test.id] = {
+                    'grade_obj': None,
+                    'component_scores': {},  # Empty dict
+                    'final_grade': None,
+                    'calculated_percentage': None,
+                    'is_overridden': False,
+                    'override_reason': None
+                }
+
+        classes_data.append({
             'class': cls,
             'enrollment': enrollment,
-            'midterm': midterm_grade,
-            'finals': finals_grade,
-            'semester_grade': enrollment.final_grade,
-            'all_grades': grades_for_class
+            'tests': tests,
+            'test_grades': test_grades,          # test.id -> grade data dict
+            'component_weights': component_weights,  # component_name -> weight %
+            'formula_components': formula_components,  # Full formula structure
+            'final_grade': enrollment.final_grade
         })
-    
-    # Calculate semester GPA
-    semester_gpa = student.get_semester_gpa(
-        current_school_year, current_semester, 'weighted'
-    )
-    
-    # Calculate cumulative GPA
-    cumulative_gpa = student.get_cumulative_gpa('weighted')
-    
-    # Determine academic rank (simplified)
-    if cumulative_gpa:
-        if cumulative_gpa <= 1.5:
-            academic_rank = 'A'
-        elif cumulative_gpa <= 2.0:
-            academic_rank = 'B'
-        elif cumulative_gpa <= 2.5:
-            academic_rank = 'C'
-        else:
-            academic_rank = 'D'
-    else:
-        academic_rank = 'N/A'
-    
-    # Count passed subjects
-    passed_count = sum(1 for item in current_classes_with_grades 
-                      if item['semester_grade'] and item['semester_grade'] <= 3.0)
-    total_count = len(current_classes_with_grades)
-    
+
     return render_template(
         'student/my_grades.html',
         student=student,
-        current_classes_with_grades=current_classes_with_grades,
-        semester_gpa=semester_gpa,
-        cumulative_gpa=cumulative_gpa,
-        academic_rank=academic_rank,
-        passed_count=passed_count,
-        total_count=total_count,
+        classes_data=classes_data,
+        available_years=available_years,
+        selected_year=selected_year,
+        selected_semester=selected_semester,
         current_school_year=current_school_year,
         current_semester=current_semester
     )
@@ -371,3 +495,48 @@ def gpa_calculator():
         current_school_year=current_school_year,
         current_semester=current_semester
     )
+
+@student_bp.route('/change-password', methods=['POST'])
+@student_required
+def change_password():
+    """
+    Change student's password
+    """
+    from extensions import bcrypt
+    
+    try:
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        
+        # Validation
+        if not all([current_password, new_password, confirm_password]):
+            flash('All fields are required.', 'error')
+            return redirect(url_for('student.profile'))
+        
+        # Check if new passwords match
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('student.profile'))
+        
+        # Check password length
+        if len(new_password) < 6:
+            flash('Password must be at least 6 characters long.', 'error')
+            return redirect(url_for('student.profile'))
+        
+        # Verify current password
+        if not bcrypt.check_password_hash(current_user.password, current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('student.profile'))
+        
+        # Update password
+        current_user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        db.session.commit()
+        
+        flash('✅ Password updated successfully!', 'success')
+        return redirect(url_for('student.profile'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error updating password: {str(e)}', 'error')
+        return redirect(url_for('student.profile'))

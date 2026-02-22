@@ -14,17 +14,13 @@
             --text-main: #c9d1d9;
             --text-dim: #8b949e;
             --border-color: #30363d;
-            --success-green: #238636;
+            --success-green: #3fb950;
+            --danger-red: #f85149;
             --row-hover: #1c2128;
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-main);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
 
         body {
             background-color: var(--bg-color);
@@ -33,7 +29,7 @@
             min-height: 100vh;
         }
 
-        /* --- Sidebar Navigation --- */
+        /* --- Sidebar --- */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-color);
@@ -56,15 +52,9 @@
             margin-bottom: 2.5rem;
         }
 
-        .logo svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--accent-blue);
-        }
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-blue); }
 
-        .nav-group {
-            margin-bottom: 2rem;
-        }
+        .nav-group { margin-bottom: 2rem; }
 
         .nav-label {
             font-size: 0.7rem;
@@ -88,9 +78,7 @@
             transition: background 0.2s;
         }
 
-        .nav-item:hover {
-            background-color: var(--border-color);
-        }
+        .nav-item:hover { background-color: var(--border-color); }
 
         .nav-item.active {
             background-color: rgba(88, 166, 255, 0.1);
@@ -98,42 +86,83 @@
             font-weight: 600;
         }
 
-        .nav-item.logout {
-            margin-top: auto;
-            color: #f85149;
-        }
+        .nav-item.logout { color: var(--danger-red); }
+
+        .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; }
 
         /* --- Main Content --- */
         .main-content {
             flex: 1;
             padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
+            overflow-y: auto;
         }
 
+        /* --- Page Header --- */
         .page-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .semester-badge {
+        .page-header h1 { font-size: 1.5rem; }
+
+        .page-header p {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
             background: var(--card-color);
             border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--accent-blue);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .filter-select:focus { outline: none; border-color: var(--accent-blue); }
+
+        .custom-year-input {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 120px;
+        }
+
+        .custom-year-input::placeholder { color: var(--text-dim); }
+
+        .filter-btn {
+            background: var(--accent-blue);
+            color: #0d1117;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
             font-weight: 600;
+            cursor: pointer;
         }
 
         /* --- Stats Row --- */
-        .class-stats {
+        .stats-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
+            gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
@@ -146,18 +175,26 @@
 
         .stat-label {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-dim);
-            margin-bottom: 8px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
         }
 
         .stat-value {
             font-size: 1.5rem;
             font-weight: 700;
+            line-height: 1;
         }
 
-        /* --- Classes List --- */
+        .stat-value .stat-denom {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-dim);
+        }
+
+        /* --- Classes Table --- */
         .classes-container {
             background: var(--sidebar-color);
             border: 1px solid var(--border-color);
@@ -165,97 +202,88 @@
             overflow: hidden;
         }
 
-        .class-row {
+        .table-header-row {
             display: grid;
-            grid-template-columns: 100px 1fr 180px 220px 80px 120px;
-            padding: 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-            align-items: center;
-            transition: background 0.2s;
-        }
-
-        .class-row:last-child {
-            border-bottom: none;
-        }
-
-        .class-row:hover {
-            background-color: var(--row-hover);
-        }
-
-        .class-row.header {
-            background-color: var(--card-color);
-            font-size: 0.75rem;
+            grid-template-columns: 110px 1fr 100px 200px 70px 120px;
+            padding: 10px 1.25rem;
+            background: var(--card-color);
+            font-size: 0.72rem;
             text-transform: uppercase;
             color: var(--text-dim);
+            letter-spacing: 0.05em;
             font-weight: 600;
-            padding: 0.75rem 1.25rem;
         }
+
+        .class-row {
+            display: grid;
+            grid-template-columns: 110px 1fr 100px 200px 70px 120px;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .class-row:hover { background-color: var(--row-hover); }
 
         .subject-code {
             font-weight: 700;
             color: var(--accent-blue);
+            font-size: 0.875rem;
         }
 
         .subject-name {
             font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
         }
 
-        .schedule-info {
-            font-size: 0.85rem;
+        .teacher-info {
             display: flex;
             align-items: center;
             gap: 6px;
-        }
-
-        .teacher-link {
-            font-size: 0.85rem;
+            font-size: 0.775rem;
             color: var(--text-dim);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .teacher-link:hover {
-            color: var(--accent-blue);
+            margin-top: 4px;
         }
 
         .teacher-avatar {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             background: var(--border-color);
             border-radius: 50%;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-dim);
+            font-weight: 600;
         }
 
-        .action-btn {
-            background: var(--card-color);
-            border: 1px solid var(--border-color);
+        .schedule-cell {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .action-btn:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-
-        .icon {
-            width: 16px;
-            height: 16px;
-            stroke: currentColor;
+        .schedule-cell svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--text-dim);
             fill: none;
-            vertical-align: middle;
+            flex-shrink: 0;
         }
+
+        .grade-pill {
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .grade-pill.passing { color: var(--success-green); }
+        .grade-pill.failing { color: var(--danger-red); }
+        .grade-pill.pending { color: var(--text-dim); }
 
         .empty-state {
             text-align: center;
@@ -264,26 +292,49 @@
         }
 
         .empty-state svg {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             stroke: var(--text-dim);
+            fill: none;
             margin-bottom: 1rem;
+            opacity: 0.5;
         }
 
-        @media (max-width: 1024px) {
-            .class-stats { grid-template-columns: repeat(2, 1fr); }
-            .class-row { 
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
+        .empty-state h3 { font-size: 1rem; margin-bottom: 6px; color: var(--text-main); }
+        .empty-state p { font-size: 0.85rem; }
+
+        @media (max-width: 1100px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 72px; padding: 1rem 0.75rem; }
+            .nav-label, .nav-item span, .logo span { display: none; }
+            .nav-item { justify-content: center; }
+            .main-content { padding: 1.25rem; }
+            .table-header-row, .class-row {
+                grid-template-columns: 90px 1fr 80px;
+            }
+            .class-row > *:nth-child(4),
+            .class-row > *:nth-child(5),
+            .class-row > *:nth-child(6),
+            .table-header-row > *:nth-child(4),
+            .table-header-row > *:nth-child(5),
+            .table-header-row > *:nth-child(6) {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">
-            <svg class="icon" style="width:24px; height:24px;" viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none">
+                <path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                <path stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            </svg>
             <span>Acadify</span>
         </div>
 
@@ -315,94 +366,179 @@
             </a>
         </div>
 
-        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout" style="margin-top: auto;">
             <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             <span>Logout</span>
         </a>
     </nav>
 
+    <!-- Main Content -->
     <main class="main-content">
-        <header class="page-header">
-            <div>
-                <h1 style="font-size: 1.75rem;">My Enrolled Classes</h1>
-                <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 4px;">Manage your current semester curriculum and schedules.</p>
-            </div>
-            <div class="semester-badge">{{ current_semester }}, AY {{ current_school_year }}</div>
-        </header>
 
-        <section class="class-stats">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1>My Classes</h1>
+                <p>{{ selected_semester }}, AY {{ selected_year }}</p>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <select class="filter-select" id="semesterFilter" onchange="applyFilters()">
+                    <option value="1st Semester" {% if selected_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                    <option value="2nd Semester" {% if selected_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                    <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
+                </select>
+
+                <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text"
+                       class="custom-year-input"
+                       id="customYearInput"
+                       placeholder="e.g. 2020-2021"
+                       title="Jump to a specific year">
+                <button class="filter-btn" onclick="jumpToCustomYear()">Go</button>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
             <div class="stat-card">
                 <span class="stat-label">Total Subjects</span>
                 <span class="stat-value">{{ "%02d"|format(total_subjects) }}</span>
             </div>
+
             <div class="stat-card">
                 <span class="stat-label">Total Units</span>
                 <span class="stat-value">{{ "%.1f"|format(total_units) }}</span>
             </div>
+
             <div class="stat-card">
-                <span class="stat-label">Lab Hours</span>
-                <span class="stat-value">{{ "%.1f"|format(lab_hours) if lab_hours else "0.0" }}</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Conflict Status</span>
-                <span class="stat-value" style="color: {{ 'var(--success-green)' if not has_conflicts else '#f85149' }}; font-size: 1rem;">
-                    {{ "No Conflicts" if not has_conflicts else "Has Conflicts" }}
+                <span class="stat-label">Subjects Graded</span>
+                <span class="stat-value">
+                    {{ graded_count }}<span class="stat-denom"> / {{ total_subjects }}</span>
                 </span>
             </div>
-        </section>
 
+            <div class="stat-card">
+                <span class="stat-label">Academic Standing</span>
+                <span class="stat-value" style="font-size: 1.1rem; color: {{ standing_color }};">
+                    {{ academic_standing }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Classes Table -->
         <div class="classes-container">
-            <div class="class-row header">
+            {% if current_classes %}
+            <div class="table-header-row">
                 <div>Code</div>
-                <div>Subject Name</div>
+                <div>Subject</div>
                 <div>Section</div>
                 <div>Schedule</div>
                 <div>Units</div>
-                <div>Action</div>
+                <div>Grade</div>
             </div>
 
-            {% if current_classes %}
-                {% for cls in current_classes %}
-                <div class="class-row">
-                    <div class="subject-code">{{ cls.subject.code }}</div>
-                    <div>
-                        <div class="subject-name">{{ cls.subject.name }}</div>
-                        <div class="teacher-link">
-                            <div class="teacher-avatar">
-                                {{ cls.teacher.first_name[0] if cls.teacher else "?" }}
-                            </div>
-                            {{ cls.teacher.get_full_name() if cls.teacher else "No teacher assigned" }}
-                        </div>
+            {% for cls in current_classes %}
+            {% set enrollment = enrollment_map.get(cls.id) %}
+            <div class="class-row">
+
+                <!-- Code -->
+                <div class="subject-code">{{ cls.effective_subject_code }}</div>
+
+                <!-- Subject + Teacher -->
+                <div>
+                    <div class="subject-name">{{ cls.effective_subject_name }}</div>
+                    {% if cls.teacher %}
+                    <div class="teacher-info">
+                        <div class="teacher-avatar">{{ cls.teacher.first_name[0] | upper }}</div>
+                        {{ cls.teacher.get_full_name() }}
                     </div>
-                    <div>{{ cls.section if cls.section else "—" }}</div>
-                    <div class="schedule-info">
-                        <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        {{ cls.schedule if cls.schedule else "TBA" }}
-                    </div>
-                    <div>{{ "%.1f"|format(cls.effective_units) }}</div>
-                    <div><button class="action-btn">Syllabus</button></div>
+                    {% else %}
+                    <div class="teacher-info">No teacher assigned</div>
+                    {% endif %}
                 </div>
-                {% endfor %}
+
+                <!-- Section -->
+                <div style="font-size: 0.875rem;">{{ cls.section if cls.section else '—' }}</div>
+
+                <!-- Schedule -->
+                <div class="schedule-cell">
+                    <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {{ cls.schedule if cls.schedule else 'TBA' }}
+                </div>
+
+                <!-- Units -->
+                <div style="font-size: 0.875rem;">{{ cls.effective_units }}</div>
+
+                <!-- Grade -->
+                <div>
+                    {% if enrollment and enrollment.final_grade is not none %}
+                        {% set g = enrollment.final_grade %}
+                        <span class="grade-pill {% if g <= 3.0 %}passing{% else %}failing{% endif %}">
+                            {{ "%.2f"|format(g) }}
+                        </span>
+                    {% else %}
+                        <span class="grade-pill pending">—</span>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+
             {% else %}
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    <h3>No Classes Enrolled</h3>
-                    <p style="margin-top: 0.5rem;">You are not currently enrolled in any classes for {{ current_semester }} ({{ current_school_year }}).</p>
-                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Contact your registrar to enroll in classes.</p>
-                </div>
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <h3>No Classes Found</h3>
+                <p>No enrolled classes for {{ selected_semester }}, {{ selected_year }}.</p>
+                <p style="margin-top: 4px;">Try a different semester or contact your registrar.</p>
+            </div>
             {% endif %}
         </div>
 
-        {% if current_classes %}
-        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
-            <button class="action-btn" style="background: var(--accent-blue); color: white; border: none; padding: 10px 20px;">
-                Print Registration Form
-            </button>
-        </div>
-        {% endif %}
     </main>
+
+    <script>
+        function applyFilters() {
+            const year     = document.getElementById('yearFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.my_classes') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        function jumpToCustomYear() {
+            const input = document.getElementById('customYearInput');
+            const year  = input.value.trim();
+
+            const yearPattern = /^\d{4}-\d{4}$/;
+            if (!yearPattern.test(year)) {
+                alert('Please enter a valid academic year format: YYYY-YYYY\nExample: 2020-2021');
+                input.focus();
+                return;
+            }
+
+            const [start, end] = year.split('-').map(Number);
+            if (end !== start + 1) {
+                alert('Years must be consecutive.\nExample: 2025-2026');
+                input.focus();
+                return;
+            }
+
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.my_classes') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        document.getElementById('customYearInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') jumpToCustomYear();
+        });
+    </script>
 
 </body>
 </html>

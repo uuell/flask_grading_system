@@ -14,17 +14,12 @@
             --text-main: #c9d1d9;
             --text-dim: #8b949e;
             --border-color: #30363d;
-            --success-green: #238636;
-            --row-hover: #1c2128;
+            --success-green: #3fb950;
+            --danger-red: #f85149;
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-main);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
 
         body {
             background-color: var(--bg-color);
@@ -33,7 +28,7 @@
             min-height: 100vh;
         }
 
-        /* --- Sidebar Navigation --- */
+        /* --- Sidebar --- */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-color);
@@ -44,6 +39,7 @@
             position: sticky;
             top: 0;
             height: 100vh;
+            flex-shrink: 0;
         }
 
         .logo {
@@ -56,15 +52,9 @@
             margin-bottom: 2.5rem;
         }
 
-        .logo svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--accent-blue);
-        }
+        .logo svg { width: 24px; height: 24px; stroke: var(--accent-blue); }
 
-        .nav-group {
-            margin-bottom: 2rem;
-        }
+        .nav-group { margin-bottom: 2rem; }
 
         .nav-label {
             font-size: 0.7rem;
@@ -88,9 +78,7 @@
             transition: background 0.2s;
         }
 
-        .nav-item:hover {
-            background-color: var(--border-color);
-        }
+        .nav-item:hover { background-color: var(--border-color); }
 
         .nav-item.active {
             background-color: rgba(88, 166, 255, 0.1);
@@ -98,132 +86,37 @@
             font-weight: 600;
         }
 
-        .nav-item.logout {
-            margin-top: auto;
-            color: #f85149;
-        }
+        .nav-item.logout { color: var(--danger-red); }
+
+        .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; }
 
         /* --- Main Content --- */
         .main-content {
             flex: 1;
             padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
+            overflow-y: auto;
+            min-width: 0;
         }
 
+        /* --- Page Header --- */
         .page-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        /* --- Grade Summaries --- */
-        .grade-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .summary-card {
-            background: var(--sidebar-color);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .summary-val {
-            display: block;
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--accent-blue);
-            margin-bottom: 4px;
-        }
-
-        .summary-label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* --- Grades Table --- */
-        .grades-container {
-            background: var(--sidebar-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .grade-table-header {
-            background: var(--card-color);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        td {
-            padding: 1.25rem 1.5rem;
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .subject-info div:first-child {
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .subject-info div:last-child {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-        }
-
-        .grade-pill {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            background: rgba(88, 166, 255, 0.1);
-            color: var(--accent-blue);
-        }
-
-        .status-passed {
-            color: var(--success-green);
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
-
-        .status-failed {
-            color: #f85149;
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
+        .page-header h1 { font-size: 1.5rem; }
+        .page-header p { color: var(--text-dim); font-size: 0.875rem; margin-top: 4px; }
 
         /* --- Filter Bar --- */
         .filter-bar {
             display: flex;
             gap: 10px;
-            margin-bottom: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .filter-select {
@@ -233,51 +126,477 @@
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 0.85rem;
-            outline: none;
+            cursor: pointer;
         }
 
-        .action-btn {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 10px 20px;
+        .filter-select:focus { outline: none; border-color: var(--accent-blue); }
+
+        .search-input {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
             border-radius: 6px;
             font-size: 0.85rem;
+            width: 180px;
+        }
+
+        .search-input::placeholder { color: var(--text-dim); }
+        .search-input:focus { outline: none; border-color: var(--accent-blue); }
+
+        .custom-year-input {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 120px;
+        }
+
+        .custom-year-input::placeholder { color: var(--text-dim); }
+
+        .filter-btn {
+            background: var(--accent-blue);
+            color: #0d1117;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .action-btn:hover {
-            background: #4493f8;
+        /* --- Class Cards --- */
+        .classes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .icon {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
+        .class-card {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .class-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            background: var(--card-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .class-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .class-code {
+            font-weight: 700;
+            color: var(--accent-blue);
+            font-size: 0.875rem;
+        }
+
+        .class-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .class-section {
+            font-size: 0.775rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .final-grade-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .final-grade-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .final-grade-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .final-grade-value.passing { color: var(--success-green); }
+        .final-grade-value.failing { color: var(--danger-red); }
+        .final-grade-value.pending { color: var(--text-dim); }
+
+        /* --- Spreadsheet Table --- */
+        .spreadsheet-wrapper {
+            overflow-x: auto;
+        }
+
+        .grade-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            min-width: 500px;
+        }
+
+        .grade-table th {
+            background: var(--bg-color);
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .grade-table th:last-child { border-right: none; }
+
+        .grade-table th.test-col {
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .grade-table th.final-col {
+            text-align: center;
+            color: var(--accent-blue);
+            min-width: 100px;
+        }
+
+        .grade-table th.status-col {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .grade-table td {
+            padding: 12px 14px;
+            border-right: 1px solid var(--border-color);
             vertical-align: middle;
         }
 
+        .grade-table td:last-child { border-right: none; }
+
+        .grade-table tr:only-child td,
+        .grade-table tbody tr td {
+            background: var(--bg-color);
+        }
+
+        .grade-cell {
+            text-align: center;
+        }
+
+        .score-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            width: 100%;
+            min-width: 60px;
+        }
+
+        .score-btn:hover {
+            background: rgba(88, 166, 255, 0.08);
+            border-color: var(--border-color);
+            color: var(--accent-blue);
+        }
+
+        .score-btn.has-grade { color: var(--text-main); }
+        .score-btn.no-grade { color: var(--text-dim); }
+
+        .status-cell { text-align: center; }
+
+        .status-passed {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--success-green);
+        }
+
+        .status-failed {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--danger-red);
+        }
+
+        .status-pending {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .no-tests-msg {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        /* --- Empty State --- */
         .empty-state {
             text-align: center;
-            padding: 3rem;
+            padding: 4rem 2rem;
             color: var(--text-dim);
         }
 
         .empty-state svg {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             stroke: var(--text-dim);
+            fill: none;
             margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 { color: var(--text-main); font-size: 1rem; margin-bottom: 6px; }
+        .empty-state p { font-size: 0.85rem; }
+
+        /* --- Component Modal (mirrors teacher modal, read-only) --- */
+        .component-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .component-modal-overlay.show { display: flex; }
+
+        .component-modal {
+            background: var(--sidebar-color);
+            width: 700px;
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .modal-header p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Component sections */
+        .component-section { margin-bottom: 2rem; }
+        .component-section:last-child { margin-bottom: 0; }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .component-title { font-size: 1rem; font-weight: 600; color: #fff; }
+
+        .component-weight {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            background: var(--card-color);
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+
+        .component-items { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        /* Item row — 1:1 with teacher modal, readonly inputs */
+        .component-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            background: var(--bg-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .item-input-group {
+            flex: 1;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        /* Readonly name — same as teacher's .item-name-input */
+        .item-name-input {
+            flex: 1;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: default;
+            font-family: var(--font-main);
+        }
+
+        .item-score-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Readonly score/max — same as teacher's .item-score-input */
+        .item-score-input {
+            width: 70px;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+            cursor: default;
+            font-family: var(--font-main);
+        }
+
+        .item-percentage {
+            min-width: 60px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .empty-component {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            background: var(--bg-color);
+            border-radius: 6px;
+            border: 1px dashed var(--border-color);
+        }
+
+        /* Component average summary row */
+        .component-summary {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--card-color);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-label { font-size: 0.85rem; color: var(--text-dim); }
+        .summary-value { font-size: 1rem; font-weight: 600; color: var(--accent-blue); }
+
+        /* Modal footer */
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .final-grade-display { display: flex; flex-direction: column; gap: 0.25rem; }
+
+        .final-grade-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .final-grade-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success-green);
+        }
+
+        .final-grade-value.failing { color: var(--danger-red); }
+
+        /* Override notice */
+        .override-notice {
+            background: rgba(248, 81, 73, 0.08);
+            border: 1px solid rgba(248, 81, 73, 0.2);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--danger-red);
+            line-height: 1.5;
+        }
+
+        .override-reason {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        /* Close button */
+        .btn-close-modal {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 72px; padding: 1rem 0.75rem; }
+            .nav-label, .nav-item span, .logo span { display: none; }
+            .nav-item { justify-content: center; }
+            .main-content { padding: 1.25rem; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">
-            <svg class="icon" style="width:24px; height:24px;" viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none">
+                <path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                <path stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+            </svg>
             <span>Acadify</span>
         </div>
 
@@ -309,112 +628,490 @@
             </a>
         </div>
 
-        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout" style="margin-top: auto;">
             <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             <span>Logout</span>
         </a>
     </nav>
 
+    <!-- Main Content -->
     <main class="main-content">
-        <header class="page-header">
+
+        <!-- Page Header -->
+        <div class="page-header">
             <div>
-                <h1 style="font-size: 1.75rem;">Academic Performance</h1>
-                <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 4px;">Detailed report of your semestral and cumulative grades.</p>
+                <h1>My Grades</h1>
+                <p>{{ selected_semester }}, AY {{ selected_year }}</p>
             </div>
-            <button class="action-btn">Download Transcript (PDF)</button>
-        </header>
 
-        <section class="grade-summary-grid">
-            <div class="summary-card">
-                <span class="summary-val">{{ "%.2f"|format(semester_gpa) if semester_gpa else "—" }}</span>
-                <span class="summary-label">Term GPA</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-val">{{ "%.2f"|format(cumulative_gpa) if cumulative_gpa else "—" }}</span>
-                <span class="summary-label">Cumulative GPA</span>
-            </div>
-            <div class="summary-card">
-                <span class="summary-val">{{ academic_rank }}</span>
-                <span class="summary-label">Academic Rank</span>
-            </div>
-        </section>
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <select class="filter-select" id="semesterFilter" onchange="applyFilters()">
+                    <option value="1st Semester" {% if selected_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
+                    <option value="2nd Semester" {% if selected_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
+                    <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
+                </select>
 
-        <div class="filter-bar">
-            <select class="filter-select">
-                <option selected>{{ current_semester }} {{ current_school_year }}</option>
-                <option>All Semesters</option>
-            </select>
-            <select class="filter-select">
-                <option>All Subjects</option>
-                <option>Major Subjects</option>
-                <option>Minor Subjects</option>
-            </select>
-        </div>
-
-        <div class="grades-container">
-            <div class="grade-table-header">
-                <h3 style="font-size: 1rem;">Subject Breakdown</h3>
-                <span class="nav-label" style="margin-bottom: 0;">
-                    AY {{ current_school_year }} • {{ current_semester }}
-                </span>
-            </div>
-            
-            {% if current_classes_with_grades %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Subject & Code</th>
-                        <th>Units</th>
-                        <th>Midterm</th>
-                        <th>Finals</th>
-                        <th>Sem Grade</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in current_classes_with_grades %}
-                    <tr>
-                        <td class="subject-info">
-                            <div>{{ item.class.subject.name }}</div>
-                            <div>{{ item.class.subject.code }}</div>
-                        </td>
-                        <td>{{ "%.1f"|format(item.class.effective_units) }}</td>
-                        <td>{{ "%.2f"|format(item.midterm) if item.midterm else "—" }}</td>
-                        <td>{{ "%.2f"|format(item.finals) if item.finals else "—" }}</td>
-                        <td>
-                            {% if item.semester_grade %}
-                                <span class="grade-pill">{{ "%.2f"|format(item.semester_grade) }}</span>
-                            {% else %}
-                                <span style="color: var(--text-dim);">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if item.semester_grade %}
-                                {% if item.semester_grade <= 3.0 %}
-                                    <span class="status-passed">Passed</span>
-                                {% else %}
-                                    <span class="status-failed">Failed</span>
-                                {% endif %}
-                            {% else %}
-                                <span style="color: var(--text-dim); font-size: 0.8rem;">Not Graded</span>
-                            {% endif %}
-                        </td>
-                    </tr>
+                <select class="filter-select" id="yearFilter" onchange="applyFilters()">
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                     {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <h3>No Grades Available</h3>
-                <p style="margin-top: 0.5rem;">You don't have any grades for {{ current_semester }} ({{ current_school_year }}).</p>
-                <p style="font-size: 0.85rem; margin-top: 0.5rem;">Grades will appear here once your professors have graded your work.</p>
+                </select>
+
+                <input type="text"
+                       class="custom-year-input"
+                       id="customYearInput"
+                       placeholder="e.g. 2020-2021"
+                       title="Jump to a specific year">
+                <button class="filter-btn" onclick="jumpToCustomYear()">Go</button>
+
+                <input type="text"
+                       class="search-input"
+                       id="searchInput"
+                       placeholder="Search subject..."
+                       oninput="searchCards()">
             </div>
-            {% endif %}
         </div>
+
+        <!-- Class Cards -->
+        {% if classes_data %}
+        <div class="classes-list" id="classList">
+
+            {% for item in classes_data %}
+            <div class="class-card" data-subject="{{ item.class.effective_subject_name | lower }} {{ item.class.effective_subject_code | lower }}">
+
+                <!-- Card Header -->
+                <div class="class-card-header">
+                    <div class="class-card-title">
+                        <div>
+                            <div>
+                                <span class="class-code">{{ item.class.effective_subject_code }}</span>
+                                <span class="class-name" style="margin-left: 8px;">{{ item.class.effective_subject_name }}</span>
+                            </div>
+                            <div class="class-section">
+                                {% if item.class.section %}Section {{ item.class.section }} &bull; {% endif %}
+                                {% if item.class.teacher %}{{ item.class.teacher.get_full_name() }}{% else %}No teacher assigned{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="final-grade-badge">
+                        <span class="final-grade-label">Final Grade</span>
+                        {% if item.final_grade is not none %}
+                            <span class="final-grade-value {% if item.final_grade <= 3.0 %}passing{% else %}failing{% endif %}">
+                                {{ "%.2f"|format(item.final_grade) }}
+                            </span>
+                        {% else %}
+                            <span class="final-grade-value pending">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Spreadsheet Table -->
+                <div class="spreadsheet-wrapper">
+                    {% if item.tests %}
+                    <table class="grade-table">
+                        <thead>
+                            <tr>
+                                {% for test in item.tests %}
+                                <th class="test-col">{{ test.title }}</th>
+                                {% endfor %}
+                                <th class="final-col">Final Grade</th>
+                                <th class="status-col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                {% for test in item.tests %}
+                                {% set grade_data = item.test_grades.get(test.id) %}
+                                <td class="grade-cell">
+                                    {% if grade_data and grade_data.final_grade is not none %}
+                                        {# ✅ FIX: Use single quotes for JSON data, no | e filter #}
+                                        <button class="score-btn has-grade"
+                                                onclick="openModal(this)"
+                                                data-test-title="{{ test.title }}"
+                                                data-class-name="{{ item.class.effective_subject_code }} - {{ item.class.effective_subject_name }}"
+                                                data-final-grade="{{ grade_data.final_grade }}"
+                                                data-percentage="{{ grade_data.calculated_percentage if grade_data.calculated_percentage else '' }}"
+                                                data-is-overridden="{{ 'true' if grade_data.is_overridden else 'false' }}"
+                                                data-override-reason="{{ grade_data.override_reason if grade_data.override_reason else '' }}"
+                                                data-component-scores='{{ grade_data.component_scores | tojson }}'
+                                                data-component-weights='{{ item.component_weights | tojson }}'
+                                                data-formula-components='{{ item.formula_components | tojson }}'>
+                                            {{ "%.2f"|format(grade_data.final_grade) }}
+                                        </button>
+                                    {% else %}
+                                        {# ✅ NEW: Empty cells are now clickable and show formula #}
+                                        <button class="score-btn no-grade"
+                                                onclick="openModal(this)"
+                                                data-test-title="{{ test.title }}"
+                                                data-class-name="{{ item.class.effective_subject_code }} - {{ item.class.effective_subject_name }}"
+                                                data-final-grade=""
+                                                data-percentage=""
+                                                data-is-overridden="false"
+                                                data-override-reason=""
+                                                data-component-scores='{}'
+                                                data-component-weights='{{ item.component_weights | tojson }}'
+                                                data-formula-components='{{ item.formula_components | tojson }}'>
+                                            —
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+
+                                <!-- Final Grade -->
+                                <td class="grade-cell">
+                                    {% if item.final_grade is not none %}
+                                        <span style="font-weight: 700; color: {% if item.final_grade <= 3.0 %}var(--success-green){% else %}var(--danger-red){% endif %};">
+                                            {{ "%.2f"|format(item.final_grade) }}
+                                        </span>
+                                    {% else %}
+                                        <span style="color: var(--text-dim);">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Status -->
+                                <td class="status-cell">
+                                    {% if item.final_grade is not none %}
+                                        {% if item.final_grade <= 3.0 %}
+                                            <span class="status-passed">Passed</span>
+                                        {% else %}
+                                            <span class="status-failed">Failed</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="status-pending">In Progress</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="no-tests-msg">No tests recorded for this class yet.</div>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <h3>No Classes Found</h3>
+            <p>No enrolled classes for {{ selected_semester }}, {{ selected_year }}.</p>
+            <p style="margin-top: 4px;">Try a different semester or contact your registrar.</p>
+        </div>
+        {% endif %}
+
     </main>
+
+    <!-- Component Modal (read-only, mirrors teacher modal layout) -->
+    <div class="component-modal-overlay" id="componentModal">
+        <div class="component-modal">
+            <div class="modal-header">
+                <h2 id="modalTestTitle">Loading...</h2>
+                <p id="modalClassName">Loading...</p>
+            </div>
+
+            <div class="modal-body" id="modalBody">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="modal-footer">
+                <div class="final-grade-display">
+                    <span class="final-grade-label">Final Grade</span>
+                    <span class="final-grade-value" id="modalFinalGrade">—</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // FILTERING
+        // ============================================================================
+
+        function applyFilters() {
+            const year     = document.getElementById('yearFilter').value;
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.my_grades') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        function jumpToCustomYear() {
+            const input = document.getElementById('customYearInput');
+            const year  = input.value.trim();
+
+            const yearPattern = /^\d{4}-\d{4}$/;
+            if (!yearPattern.test(year)) {
+                alert('Please enter a valid academic year format: YYYY-YYYY\nExample: 2020-2021');
+                input.focus();
+                return;
+            }
+
+            const [start, end] = year.split('-').map(Number);
+            if (end !== start + 1) {
+                alert('Years must be consecutive.\nExample: 2025-2026');
+                input.focus();
+                return;
+            }
+
+            const semester = document.getElementById('semesterFilter').value;
+            window.location.href = `{{ url_for('student.my_grades') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
+        }
+
+        document.getElementById('customYearInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') jumpToCustomYear();
+        });
+
+        // ============================================================================
+        // SEARCH
+        // ============================================================================
+
+        function searchCards() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            document.querySelectorAll('.class-card').forEach(card => {
+                const subject = card.dataset.subject || '';
+                card.style.display = subject.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        // ============================================================================
+        // MODAL — read-only, mirrors teacher component modal layout
+        // ============================================================================
+
+        function openModal(btn) {
+            // ✅ FIX: Properly parse JSON data (no double encoding)
+            const testTitle      = btn.dataset.testTitle;
+            const className      = btn.dataset.className;
+            const finalGradeVal  = btn.dataset.finalGrade;
+            const finalGrade     = finalGradeVal ? parseFloat(finalGradeVal) : null;
+            const isOverridden   = btn.dataset.isOverridden === 'true';
+            const overrideReason = btn.dataset.overrideReason || '';
+
+            let componentScores  = {};
+            let componentWeights = {};
+            let formulaComponents = [];
+
+            // ✅ FIX: Parse JSON correctly (no | e filter = clean JSON)
+            try {
+                componentScores = JSON.parse(btn.dataset.componentScores || '{}');
+            } catch(e) {
+                console.error('Failed to parse component scores:', e);
+                componentScores = {};
+            }
+
+            try {
+                componentWeights = JSON.parse(btn.dataset.componentWeights || '{}');
+            } catch(e) {
+                console.error('Failed to parse component weights:', e);
+                componentWeights = {};
+            }
+
+            try {
+                formulaComponents = JSON.parse(btn.dataset.formulaComponents || '[]');
+            } catch(e) {
+                console.error('Failed to parse formula components:', e);
+                formulaComponents = [];
+            }
+
+            // Update header
+            document.getElementById('modalTestTitle').textContent = testTitle;
+            document.getElementById('modalClassName').textContent = className;
+
+            // Update footer final grade
+            const gradeEl = document.getElementById('modalFinalGrade');
+            if (finalGrade !== null) {
+                gradeEl.textContent = finalGrade.toFixed(2);
+                gradeEl.className = 'final-grade-value' + (finalGrade > 3.0 ? ' failing' : '');
+            } else {
+                gradeEl.textContent = '—';
+                gradeEl.className = 'final-grade-value pending';
+            }
+
+            // ✅ FIX: Build modal body - IDENTICAL to teacher's structure
+            let html = '';
+
+            // Show override notice if applicable
+            if (isOverridden) {
+                html += `<div class="override-notice">
+                    ⚠️ This grade was manually adjusted by the teacher.
+                    ${overrideReason ? `<div class="override-reason">Reason: ${overrideReason}</div>` : ''}
+                </div>`;
+            }
+
+            // Show "not graded yet" notice if no final grade
+            if (finalGrade === null) {
+                html += `<div style="background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--accent-blue);">
+                    ℹ️ This test has not been graded yet. Below is the grading formula your teacher will use.
+                </div>`;
+            }
+
+            // ✅ FIX: Use formulaComponents (from backend) to structure the modal
+            if (formulaComponents.length === 0) {
+                html += `<p style="color: var(--text-dim); font-size: 0.875rem;">No grading formula has been set for this class.</p>`;
+            } else {
+                // Render one section per formula component - IDENTICAL structure to teacher modal
+                for (const component of formulaComponents) {
+                    const compName = component.name;
+                    const compWeight = component.weight;
+                    const items = componentScores[compName] || [];
+
+                    html += `<div class="component-section">
+                        <div class="component-header">
+                            <span class="component-title">${escapeHtml(compName)}</span>
+                            <span class="component-weight">${compWeight}%</span>
+                        </div>
+                        <div class="component-items">`;
+
+                    if (items.length === 0) {
+                        // No items yet
+                        if (finalGrade === null) {
+                            html += `<div class="empty-component">No items recorded yet</div>`;
+                        } else {
+                            html += `<div class="empty-component">No items recorded for this component</div>`;
+                        }
+                    } else {
+                        // Render items - IDENTICAL to teacher's item rows (but read-only)
+                        if (Array.isArray(items)) {
+                            items.forEach(item => {
+                                const pct = (item.max > 0)
+                                    ? ((item.score / item.max) * 100).toFixed(1) + '%'
+                                    : '—';
+
+                                html += `<div class="component-item">
+                                    <div class="item-input-group">
+                                        <input type="text"
+                                            class="item-name-input"
+                                            value="${escapeHtml(item.name || '—')}"
+                                            readonly
+                                            tabindex="-1"
+                                            style="cursor: default;">
+
+                                        <div class="item-score-group">
+                                            <input type="text"
+                                                class="item-score-input"
+                                                value="${item.score ?? '—'}"
+                                                readonly
+                                                tabindex="-1"
+                                                style="cursor: default;">
+                                            <span style="color: var(--text-dim);">/</span>
+                                            <input type="text"
+                                                class="item-score-input"
+                                                value="${item.max ?? '—'}"
+                                                readonly
+                                                tabindex="-1"
+                                                style="cursor: default;">
+                                        </div>
+
+                                        <span class="item-percentage">${pct}</span>
+                                    </div>
+                                </div>`;
+                            });
+                        } else if (typeof items === 'number') {
+                            // Single averaged value (Option A)
+                            html += `<div class="component-item">
+                                <div class="item-input-group">
+                                    <input type="text"
+                                        class="item-name-input"
+                                        value="Score"
+                                        readonly
+                                        tabindex="-1"
+                                        style="cursor: default;">
+                                    <div class="item-score-group">
+                                        <input type="text"
+                                            class="item-score-input"
+                                            value="${items}"
+                                            readonly
+                                            tabindex="-1"
+                                            style="cursor: default;">
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
+                    }
+
+                    html += `</div>`; // .component-items
+
+                    // Component average summary (only if items exist)
+                    if (Array.isArray(items) && items.length > 0) {
+                        const avgPct = calculateComponentAverage(items);
+                        html += `<div class="component-summary">
+                            <span class="summary-label">Component Average:</span>
+                            <span class="summary-value">${avgPct.toFixed(2)}%</span>
+                        </div>`;
+                    }
+
+                    html += `</div>`; // .component-section
+                }
+            }
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('componentModal').classList.add('show');
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Helper function to calculate component average (keep existing)
+        function calculateComponentAverage(items) {
+            if (!items || items.length === 0) return 0;
+            let total = 0, count = 0;
+            for (const item of items) {
+                if (item.max > 0) {
+                    total += (item.score / item.max) * 100;
+                    count++;
+                }
+            }
+            return count > 0 ? total / count : 0;
+        }
+
+        // Keep existing closeModal and event listeners
+        function closeModal() {
+            document.getElementById('componentModal').classList.remove('show');
+        }
+
+        document.getElementById('componentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function calculateComponentAverage(items) {
+            if (!items || items.length === 0) return 0;
+            let total = 0, count = 0;
+            for (const item of items) {
+                if (item.max > 0) {
+                    total += (item.score / item.max) * 100;
+                    count++;
+                }
+            }
+            return count > 0 ? total / count : 0;
+        }
+
+        function closeModal() {
+            document.getElementById('componentModal').classList.remove('show');
+        }
+
+        // Close when clicking the dark overlay backdrop
+        document.getElementById('componentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
 
 </body>
 </html>
