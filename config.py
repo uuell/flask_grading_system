@@ -190,11 +190,22 @@ class ProductionConfig(Config):
     """
     DEBUG = False
     TESTING = False
-    
-    # Use PostgreSQL or MySQL in production
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://username:password@localhost/acadify_prod'
-    
+
+    @staticmethod
+    def _get_database_url():
+        """
+        Render provides DATABASE_URL starting with 'postgres://' but
+        SQLAlchemy 1.4+ requires 'postgresql://'. This fixes that.
+        """
+        url = os.environ.get('DATABASE_URL') or \
+            'postgresql://username:password@localhost/acadify_prod'
+        if url.startswith('postgres://'):
+            url = url.replace('postgres://', 'postgresql://', 1)
+        return url
+
+    # Use PostgreSQL in production (with Render URL fix applied)
+    SQLALCHEMY_DATABASE_URI = _get_database_url.__func__()
+
     # Security settings
     SESSION_COOKIE_SECURE = True  # Require HTTPS for cookies
     
