@@ -275,6 +275,7 @@
             .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -297,6 +298,14 @@
             <a href="{{ url_for('teacher.grading') }}" class="nav-item">
                 <svg class="icon" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">AI Tools</span>
+            <a href="{{ url_for('ocr.ai_grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>AI Grading</span>
             </a>
         </div>
 
@@ -555,5 +564,6 @@
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

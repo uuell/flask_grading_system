@@ -20,12 +20,7 @@
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: var(--font-main);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
 
         body {
             background-color: var(--bg-color);
@@ -34,7 +29,6 @@
             min-height: 100vh;
         }
 
-        /* --- Sidebar Navigation --- */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-color);
@@ -48,99 +42,29 @@
             flex-shrink: 0;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: #fff;
-            margin-bottom: 2.5rem;
-        }
-
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: #fff; margin-bottom: 2.5rem; }
         .logo svg { width: 24px; height: 24px; stroke: var(--accent-purple); fill: none; }
 
-        .nav-group {
-            margin-bottom: 2rem;
-        }
-
-        .nav-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            letter-spacing: 0.1em;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 6px;
-            color: var(--text-main);
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-            transition: background 0.2s;
-        }
-
+        .nav-group { margin-bottom: 2rem; }
+        .nav-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 1rem; display: block; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 6px; color: var(--text-main); text-decoration: none; font-size: 0.9rem; margin-bottom: 4px; transition: background 0.2s; }
         .nav-item:hover { background-color: var(--border-color); }
         .nav-item.active { background-color: rgba(188, 140, 255, 0.1); color: var(--accent-purple); font-weight: 600; }
         .nav-item.logout { margin-top: auto; color: #f85149; }
 
-        /* --- Main Content --- */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-        }
+        .main-content { flex: 1; overflow-y: auto; padding: 2rem; }
 
-        /* --- Header --- */
-        .page-header {
-            margin-bottom: 2rem;
-        }
+        .page-header { margin-bottom: 2rem; }
 
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            margin-bottom: 1rem;
-        }
+        .breadcrumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem; }
+        .breadcrumb a { color: var(--accent-blue); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
 
-        .breadcrumb a {
-            color: var(--accent-blue);
-            text-decoration: none;
-        }
+        .header-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .header-title h1 { font-size: 2rem; color: #fff; }
+        .header-subtitle { font-size: 0.9rem; color: var(--text-dim); margin-top: 0.5rem; }
 
-        .breadcrumb a:hover {
-            text-decoration: underline;
-        }
-
-        .header-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-title h1 {
-            font-size: 2rem;
-            color: #fff;
-        }
-
-        .header-subtitle {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            margin-top: 0.5rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 
         .btn {
             padding: 10px 20px;
@@ -156,239 +80,106 @@
             text-decoration: none;
         }
 
-        .btn-primary {
-            background: var(--accent-purple);
-            color: white;
-            border: none;
-        }
-
+        .btn-primary { background: var(--accent-purple); color: white; border: none; }
         .btn-primary:hover { opacity: 0.9; }
 
-        .btn-outline {
-            background: transparent;
-            border-color: var(--border-color);
-            color: var(--text-main);
-        }
-
+        .btn-outline { background: transparent; border-color: var(--border-color); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--text-main); }
 
-        /* --- Info Cards --- */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
+        /* Export dropdown */
+        .export-dropdown { position: relative; }
 
-        .info-card {
-            background: var(--card-color);
+        .export-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: var(--sidebar-color);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 1.5rem;
+            min-width: 200px;
+            padding: 6px;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
 
-        .info-card-label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
+        .export-menu.open { display: block; }
 
-        .info-card-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .info-card-subtext {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            margin-top: 0.25rem;
-        }
-
-        /* --- Sections --- */
-        .section {
-            background: var(--card-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        /* --- Student Table --- */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 12px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .student-cell {
+        .export-menu a {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .student-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--bg-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            color: var(--accent-purple);
-            font-weight: 700;
-        }
-
-        .student-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .student-name {
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .student-number {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            font-family: monospace;
-        }
-
-        .grade-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .grade-excellent {
-            background: rgba(35, 134, 54, 0.2);
-            color: var(--success-green);
-        }
-
-        .grade-good {
-            background: rgba(88, 166, 255, 0.2);
-            color: var(--accent-blue);
-        }
-
-        .grade-passing {
-            background: rgba(255, 184, 0, 0.2);
-            color: #ffb800;
-        }
-
-        .grade-failing {
-            background: rgba(248, 81, 73, 0.2);
-            color: var(--error-red);
-        }
-
-        .grade-none {
-            background: rgba(139, 148, 158, 0.2);
-            color: var(--text-dim);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--text-dim);
-        }
-
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
-
-        .icon {
-            width: 18px;
-            height: 18px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2;
-        }
-
-        .alert {
-            padding: 12px 16px;
+            padding: 10px 12px;
             border-radius: 6px;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background 0.15s;
         }
 
-        .alert-success {
-            background: rgba(35, 134, 54, 0.1);
-            border: 1px solid rgba(35, 134, 54, 0.3);
-            color: var(--success-green);
+        .export-menu a:hover { background: var(--card-color); }
+
+        .export-menu .menu-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
         }
 
-        .alert-error {
-            background: rgba(248, 81, 73, 0.1);
-            border: 1px solid rgba(248, 81, 73, 0.3);
-            color: var(--error-red);
-        }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .detail-label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
+        .export-label {
+            font-size: 0.7rem;
             text-transform: uppercase;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+            padding: 6px 12px 2px;
         }
 
-        .detail-value {
-            font-size: 0.95rem;
-            color: #fff;
-        }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+
+        .info-card { background: var(--card-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; }
+        .info-card-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .info-card-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+        .info-card-subtext { font-size: 0.85rem; color: var(--text-dim); margin-top: 0.25rem; }
+
+        .section { background: var(--card-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .section-title { font-size: 1.25rem; font-weight: 600; color: #fff; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border-color); }
+        td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        .student-cell { display: flex; align-items: center; gap: 10px; }
+        .student-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-color); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--accent-purple); font-weight: 700; }
+        .student-name { font-weight: 600; color: #fff; }
+        .student-number { font-size: 0.85rem; color: var(--text-dim); font-family: monospace; }
+
+        .grade-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; }
+        .grade-excellent { background: rgba(35, 134, 54, 0.2); color: var(--success-green); }
+        .grade-good { background: rgba(88, 166, 255, 0.2); color: var(--accent-blue); }
+        .grade-passing { background: rgba(255, 184, 0, 0.2); color: #ffb800; }
+        .grade-failing { background: rgba(248, 81, 73, 0.2); color: var(--error-red); }
+        .grade-none { background: rgba(139, 148, 158, 0.2); color: var(--text-dim); }
+
+        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-dim); }
+        .empty-state svg { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.3; }
+
+        .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .alert-success { background: rgba(35, 134, 54, 0.1); border: 1px solid rgba(35, 134, 54, 0.3); color: var(--success-green); }
+        .alert-error { background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.3); color: var(--error-red); }
+
+        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .detail-item { display: flex; flex-direction: column; gap: 0.25rem; }
+        .detail-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; }
+        .detail-value { font-size: 0.95rem; color: #fff; }
+
+        .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
-    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="logo">
             <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
@@ -425,20 +216,15 @@
         </a>
     </nav>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <!-- Header -->
         <div class="page-header">
             <div class="breadcrumb">
                 <a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
@@ -447,17 +233,38 @@
                 <span>›</span>
                 <span>{{ class_obj.effective_subject_code }}</span>
             </div>
-            
+
             <div class="header-title">
                 <div>
                     <h1>{{ class_obj.effective_subject_name }}</h1>
                     <p class="header-subtitle">
-                        {{ class_obj.effective_subject_code }} 
+                        {{ class_obj.effective_subject_code }}
                         {% if class_obj.section %}- Section {{ class_obj.section }}{% endif %}
                         • {{ class_obj.school_year }} {{ class_obj.semester }}
                     </p>
                 </div>
+
                 <div class="action-buttons">
+                    <!-- Export dropdown -->
+                    <div class="export-dropdown" id="exportDropdown">
+                        <button class="btn btn-outline" onclick="toggleExportMenu()" id="exportBtn">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Export Grades
+                            <svg class="icon" style="width:14px; height:14px;" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="export-menu" id="exportMenu">
+                            <div class="export-label">Download as</div>
+                            <a href="{{ url_for('teacher.export_grades', class_id=class_obj.id, format='csv') }}">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                CSV (.csv)
+                            </a>
+                            <a href="{{ url_for('teacher.export_grades', class_id=class_obj.id, format='xlsx') }}">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M3 10h18M3 14h18M10 4v16M6 4h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                                Excel (.xlsx)
+                            </a>
+                        </div>
+                    </div>
+
                     <a href="{{ url_for('teacher.grading', class_id=class_obj.id) }}" class="btn btn-primary">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Grade Students
@@ -466,7 +273,6 @@
             </div>
         </div>
 
-        <!-- Class Info Cards -->
         <div class="info-grid">
             <div class="info-card">
                 <div class="info-card-label">Enrolled Students</div>
@@ -498,18 +304,14 @@
                     {% set graded_count = students_with_grades|selectattr('grade_count', 'gt', 0)|list|length %}
                     {{ graded_count }}
                 </div>
-                <div class="info-card-subtext">
-                    {{ students_with_grades|length - graded_count }} pending
-                </div>
+                <div class="info-card-subtext">{{ students_with_grades|length - graded_count }} pending</div>
             </div>
         </div>
 
-        <!-- Class Details Section -->
         <div class="section">
             <div class="section-header">
                 <h2 class="section-title">Class Information</h2>
             </div>
-            
             <div class="detail-grid">
                 <div class="detail-item">
                     <span class="detail-label">Subject Code</span>
@@ -546,7 +348,6 @@
             </div>
         </div>
 
-        <!-- Student Roster -->
         <div class="section">
             <div class="section-header">
                 <h2 class="section-title">Student Roster</h2>
@@ -574,9 +375,9 @@
                                 <div class="student-avatar">
                                     {{ item.student.first_name[0] }}{{ item.student.last_name[0] }}
                                 </div>
-                                <div class="student-info">
-                                    <span class="student-name">{{ item.student.get_full_name() }}</span>
-                                    <span class="student-number">{{ item.student.student_number }}</span>
+                                <div>
+                                    <div class="student-name">{{ item.student.get_full_name() }}</div>
+                                    <div class="student-number">{{ item.student.student_number }}</div>
                                 </div>
                             </div>
                         </td>
@@ -610,14 +411,25 @@
                     <path stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
                 <h3>No Students Enrolled</h3>
-                <p style="margin-top: 0.5rem;">
-                    This class has no enrolled students yet.
-                </p>
+                <p style="margin-top: 0.5rem;">This class has no enrolled students yet.</p>
             </div>
             {% endif %}
         </div>
-
     </main>
 
+    <script>
+        function toggleExportMenu() {
+            document.getElementById('exportMenu').classList.toggle('open');
+        }
+
+        // Close when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('exportDropdown');
+            if (!dropdown.contains(e.target)) {
+                document.getElementById('exportMenu').classList.remove('open');
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

@@ -331,6 +331,7 @@
 
         .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -367,17 +368,6 @@
             <h1 style="color: #fff; margin-bottom: 5px;">Admin Dashboard</h1>
             <p style="color: var(--text-dim);">System Overview & User Registration</p>
         </header>
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
 
         <!-- System Stats -->
         <section class="stats-grid">
@@ -507,6 +497,10 @@
                                     <option value="COE">College of Education (COE)</option>
                                     <option value="CIT">College of Industrial Technology (CIT)</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                            <label>Specialization</label>
+                                <input type="text" name="specialization" class="form-input" placeholder="e.g. Computer Science, Mathematics">
                             </div>
                             <button type="submit" class="btn-primary" style="background-color: #bc8cff;">Register Teacher</button>
                         </form>
@@ -702,5 +696,6 @@
             }
         }
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

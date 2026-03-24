@@ -248,6 +248,7 @@
             background: rgba(248, 81, 73, 0.1);
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -279,17 +280,6 @@
     </nav>
 
     <main class="main-content">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
         <header class="header-actions">
             <div>
                 <h1 style="color: #fff;">User Directory</h1>
@@ -508,5 +498,6 @@
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

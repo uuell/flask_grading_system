@@ -4,7 +4,7 @@ Entry point for the Acadify Flask application.
 Uses the Application Factory pattern for modularity and testing.
 """
 
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, flash, request
 from config import config
 from extensions import db, migrate, login_manager, bcrypt
 
@@ -68,19 +68,58 @@ def register_blueprints(app):
     from blueprints.ocr.routes import ocr_bp
     from blueprints.admin.routes import admin_bp
 
-    
     # Register with URL prefixes
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(student_bp, url_prefix='/student')
     app.register_blueprint(teacher_bp, url_prefix='/teacher')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(ocr_bp, url_prefix='/ocr')
-    
-    # Register home/landing page route
+
+    # ── Public routes ────────────────────────────────────────────────────
+
     @app.route('/')
     def index():
         """Landing page"""
         return render_template('index.html')
+
+    @app.route('/about')
+    def about():
+        """About page"""
+        return render_template('about.html')
+
+    @app.route('/privacy')
+    def privacy():
+        """Privacy Policy page"""
+        return render_template('privacy.html')
+
+    @app.route('/contact', methods=['GET', 'POST'])
+    def contact():
+        """Contact page"""
+        if request.method == 'POST':
+            first_name = request.form.get('first_name', '').strip()
+            last_name  = request.form.get('last_name', '').strip()
+            email      = request.form.get('email', '').strip()
+            subject    = request.form.get('subject', '').strip()
+            message    = request.form.get('message', '').strip()
+            role       = request.form.get('role', '').strip()
+
+            if not all([first_name, last_name, email, subject, message]):
+                flash('Please fill in all required fields.', 'danger')
+                return render_template('contact.html')
+
+            # Logs to console — swap for email sending in production
+            print(f"[CONTACT] From: {first_name} {last_name} <{email}> | Role: {role}")
+            print(f"[CONTACT] Subject: {subject}")
+            print(f"[CONTACT] Message: {message}")
+
+            flash(
+                f'Thank you, {first_name}! Your message has been received. '
+                f'We will get back to you at {email} shortly.',
+                'success'
+            )
+            return redirect(url_for('contact'))
+
+        return render_template('contact.html')
 
 
 def register_error_handlers(app):
@@ -90,12 +129,12 @@ def register_error_handlers(app):
     @app.errorhandler(404)
     def not_found(error):
         return render_template('errors/404.html'), 404
-    
+
     @app.errorhandler(500)
     def internal_error(error):
         db.session.rollback()  # Rollback any failed database transactions
         return render_template('errors/500.html'), 500
-    
+
     @app.errorhandler(403)
     def forbidden(error):
         return render_template('errors/403.html'), 403
@@ -105,7 +144,7 @@ def register_error_handlers(app):
 if __name__ == '__main__':
     # Create app instance (always use development config)
     app = create_app('development')
-    
+
     # Run the development server
     app.run(
         host='0.0.0.0',  # Allow external connections

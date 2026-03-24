@@ -663,7 +663,240 @@
             border-radius: 6px;
             font-size: 0.85rem;
         }
+
+        /* ============================================================
+        CLASSES PAGE (teacher/classes.html) — RESPONSIVE CSS
+        Paste this inside the <style> block in classes.html
+        ============================================================ */
+
+        @media (max-width: 1100px) {
+            .class-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Body */
+            body {
+                flex-direction: column;
+                overflow-x: hidden;
+            }
+
+            /* Sidebar drawer */
+            .sidebar,
+            nav.sidebar {
+                position: fixed !important;
+                left: -280px !important;
+                top: 0 !important;
+                width: 260px !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                transition: left 0.25s ease !important;
+                overflow-y: auto !important;
+            }
+
+            .sidebar.sidebar-open,
+            nav.sidebar.sidebar-open {
+                left: 0 !important;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.5) !important;
+            }
+
+            /* Main content */
+            .main-content {
+                padding: 1rem !important;
+                padding-top: 4.5rem !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+
+            /* Header actions — stack title + button */
+            .header-actions {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.75rem !important;
+                margin-bottom: 1.25rem !important;
+            }
+
+            .header-actions h1 {
+                font-size: 1.35rem !important;
+            }
+
+            .btn-primary {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            /* Filter bar — wraps on mobile */
+            .filter-bar {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .filter-bar .filter-select {
+                flex: 1 !important;
+                min-width: 120px !important;
+            }
+
+            /* "or" + custom year input + arrow button */
+            .filter-bar > div[style*="display: flex"] {
+                width: 100% !important;
+                gap: 0.4rem !important;
+            }
+
+            .filter-bar > div[style*="display: flex"] span {
+                display: none !important; /* hide "or" label on mobile */
+            }
+
+            #customYearInput {
+                flex: 1 !important;
+                width: auto !important;
+            }
+
+            /* Search box full width */
+            .search-box {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            /* Visible count — right align on its own line */
+            .filter-bar > span[style*="margin-left: auto"] {
+                width: 100% !important;
+                text-align: right !important;
+            }
+
+            /* Class cards — single column */
+            .class-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Class card internals */
+            .class-card {
+                padding: 1.25rem !important;
+            }
+
+            .class-header h3 {
+                font-size: 0.95rem !important;
+                padding-right: 60px !important;
+            }
+
+            .class-footer {
+                flex-wrap: wrap !important;
+                gap: 0.75rem !important;
+            }
+
+            .roster-count {
+                font-size: 0.78rem !important;
+            }
+
+            /* ── Class creation/edit MODAL ── */
+            .modal-overlay .modal {
+                width: 96vw !important;
+                max-width: 96vw !important;
+                max-height: 92vh !important;
+                padding: 1.25rem !important;
+                border-radius: 10px !important;
+            }
+
+            .modal h2 {
+                font-size: 1.2rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Form rows — single column */
+            .form-row {
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+            }
+
+            /* Modal footer — stack buttons */
+            .modal-footer {
+                flex-direction: column-reverse !important;
+                gap: 0.5rem !important;
+                padding-top: 1rem !important;
+                margin-top: 1.25rem !important;
+            }
+
+            .modal-footer .btn-primary,
+            .modal-footer .btn-secondary {
+                width: 100% !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            /* Formula builder component rows */
+            .component-row {
+                grid-template-columns: 2fr 1fr auto !important;
+                gap: 0.4rem !important;
+            }
+
+            /* Passing grade input */
+            .passing-grade-input {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .passing-grade-input label {
+                min-width: unset !important;
+                width: 100% !important;
+            }
+
+            .passing-grade-input input {
+                flex: 1 !important;
+            }
+
+            /* Roster builder */
+            .roster-builder-header {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+
+            /* Warning div in edit mode */
+            .edit-warning {
+                font-size: 0.8rem !important;
+                padding: 10px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem !important;
+                padding-top: 4rem !important;
+            }
+
+            .class-grid {
+                gap: 0.75rem !important;
+            }
+
+            .class-card {
+                padding: 1rem !important;
+            }
+
+            .class-status {
+                font-size: 0.65rem !important;
+                top: 1rem !important;
+                right: 1rem !important;
+            }
+
+            .action-btns {
+                gap: 0.4rem !important;
+            }
+
+            .icon-btn {
+                padding: 5px !important;
+            }
+
+            .modal-overlay .modal {
+                padding: 1rem !important;
+                max-height: 95vh !important;
+            }
+
+            .component-row {
+                grid-template-columns: 1fr 80px auto !important;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -687,6 +920,14 @@
             <a href="{{ url_for('teacher.grading') }}" class="nav-item">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">AI Tools</span>
+            <a href="{{ url_for('ocr.ai_grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>AI Grading</span>
             </a>
         </div>
 
@@ -856,7 +1097,7 @@
                 
                 <!-- === MANUAL SUBJECT INPUT (UPDATED) === -->
                 <div class="form-group">
-                    <label>Subject Name *</label>
+                    <label style="color: var(--accent-blue)">Subject Name *</label>
                     <input type="text" name="subject_name" id="subjectNameInput" class="form-input" 
                            placeholder="e.g., Data Structures and Algorithms" required>
                     <small style="color: var(--text-dim); font-size: 0.75rem; display: block; margin-top: 4px;">
@@ -875,7 +1116,7 @@
                         </small>
                     </div>
                     <div class="form-group">
-                        <label>Units *</label>
+                        <label style="color: var(--accent-blue)">Units *</label>
                         <input type="number" name="units" id="unitsInput" class="form-input" 
                                value="3" min="1" max="6" required>
                     </div>
@@ -884,7 +1125,7 @@
                 <!-- Section and Room -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Section *</label>
+                        <label style="color: var(--accent-blue)">Section *</label>
                         <input type="text" name="section" id="sectionInput" class="form-input" placeholder="A" required>
                     </div>
                     <div class="form-group">
@@ -905,12 +1146,12 @@
                 <!-- School Year and Semester -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>School Year *</label>
+                        <label style="color: var(--accent-blue)">School Year *</label>
                         <input type="text" name="school_year" id="schoolYearInput" class="form-input" 
                                value="{{ current_school_year }}" placeholder="2024-2025" required>
                     </div>
                     <div class="form-group">
-                        <label>Semester *</label>
+                        <label style="color: var(--accent-blue)">Semester *</label>
                         <select name="semester" id="semesterSelect" class="form-select" required>
                             <option value="1st Semester" {% if current_semester == '1st Semester' %}selected{% endif %}>1st Semester</option>
                             <option value="2nd Semester" {% if current_semester == '2nd Semester' %}selected{% endif %}>2nd Semester</option>
@@ -928,7 +1169,7 @@
                 <!-- === GRADING FORMULA BUILDER (NEW!) === -->
                 <div class="formula-section">
                     <div class="formula-header" onclick="toggleFormulaBuilder()">
-                        <div class="formula-title">
+                        <div class="formula-title" style="color: var(--accent-blue)">
                             <svg class="icon" viewBox="0 0 24 24">
                                 <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                             </svg>
@@ -992,7 +1233,90 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 440px;">
+
+            <!-- Icon + heading -->
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="
+                    width: 56px;
+                    height: 56px;
+                    background: rgba(248, 81, 73, 0.1);
+                    border: 1px solid rgba(248, 81, 73, 0.3);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 1rem;
+                    font-size: 1.4rem;
+                ">
+                    <svg style="width:24px;height:24px;stroke:#f85149;fill:none;stroke-width:2;" viewBox="0 0 24 24">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 0.5rem; color: #fff;">Delete Class?</h2>
+                <p style="color: var(--text-dim); font-size: 0.875rem; line-height: 1.6;">
+                    You are about to delete
+                    <strong id="deleteClassName" style="color: var(--text-main);">this class</strong>.
+                    <br>All enrollments, tests, and grades will be
+                    <strong style="color: #f85149;">permanently removed</strong>.
+                </p>
+            </div>
+
+            <!-- Warning checklist -->
+            <div style="
+                background: rgba(248, 81, 73, 0.05);
+                border: 1px solid rgba(248, 81, 73, 0.2);
+                border-radius: 6px;
+                padding: 12px 16px;
+                margin-bottom: 1.5rem;
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                line-height: 1.6;
+            ">
+                The following will be permanently deleted:
+                <ul style="margin: 6px 0 0 16px; display: flex; flex-direction: column; gap: 3px;">
+                    <li>All student enrollments</li>
+                    <li>All tests &amp; quizzes</li>
+                    <li>All grades &amp; component scores</li>
+                </ul>
+            </div>
+
+            <!-- Action buttons -->
+            <form id="deleteClassForm" method="POST" action="{{ url_for('teacher.delete_class') }}">
+                <input type="hidden" name="class_id" id="deleteClassId">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button"
+                            onclick="closeDeleteModal()"
+                            class="btn-secondary"
+                            style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            style="
+                                flex: 1;
+                                padding: 10px;
+                                border-radius: 6px;
+                                border: none;
+                                background: #f85149;
+                                color: white;
+                                font-weight: 600;
+                                cursor: pointer;
+                                font-size: 0.9rem;
+                                transition: opacity 0.2s;
+                            "
+                            onmouseover="this.style.opacity='0.85'"
+                            onmouseout="this.style.opacity='1'">
+                        Delete Class
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
     <script>
+
         // === GRADING FORMULA BUILDER JAVASCRIPT ===
         
         let formulaComponents = [];
@@ -1230,22 +1554,24 @@
         }
 
         function confirmDelete(classId, className) {
-            if (confirm(`Are you sure you want to delete "${className}"?\n\nThis action cannot be undone.`)) {
-                // Create a form and submit
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = "{{ url_for('teacher.delete_class') }}";
-                
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'class_id';
-                input.value = classId;
-                
-                form.appendChild(input);
-                document.body.appendChild(form);
-                form.submit();
-            }
+            document.getElementById('deleteClassId').value        = classId;
+            document.getElementById('deleteClassName').textContent = `"${className}"`;
+            document.getElementById('deleteModal').classList.add('show');
         }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+        
+        // Close when clicking the dark backdrop
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+        
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDeleteModal();
+        });
 
         // Student search functionality
         const searchInput = document.getElementById('studentSearchInput');
@@ -1604,5 +1930,6 @@
             }
         }
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

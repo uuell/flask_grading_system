@@ -5,7 +5,7 @@ Handles student-specific routes: dashboard, grades, classes, profile.
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from models import Student, Class, Enrollment, Grade, Test
+from models import Student, Class, Enrollment, Grade, Test, TestPaperImage
 from extensions import db, bcrypt
 from config import Config
 
@@ -312,110 +312,107 @@ def my_classes():
     )
 
 
+ 
 @student_bp.route('/grades')
 @student_required
 def my_grades():
-    """
-    Renders the My Grades page.
-    Shows all enrolled classes for the selected semester as individual
-    spreadsheet cards, each mirroring the teacher's grading table.
-    Supports ?year= and ?semester= query params for filtering.
-    
-    ✅ FIXED: Properly structures component data for modal display
-    """
     student = current_user.student_profile
-
-    # --- Current config values ---
+ 
     current_school_year = Config.get_current_school_year()
-    current_semester = Config.get_current_semester()
-
-    # --- Filtering ---
-    selected_year = request.args.get('year')
+    current_semester    = Config.get_current_semester()
+ 
+    selected_year     = request.args.get('year')
     selected_semester = request.args.get('semester')
-
+ 
     if not selected_year or selected_year == 'all':
         selected_year = current_school_year
     if not selected_semester or selected_semester == 'all':
         selected_semester = current_semester
-
-    # --- Build available years from student enrollment history ---
+ 
     from datetime import datetime as dt
-    all_enrollments_years = Enrollment.query.filter_by(
-        student_id=student.id
-    ).join(Class).with_entities(Class.school_year).distinct().all()
-
-    actual_years = set(row.school_year for row in all_enrollments_years)
-    current_year_num = dt.now().year
-    buffer_years = {f"{y}-{y+1}" for y in range(current_year_num - 3, current_year_num + 2)}
+    all_enrollments_years = (
+        Enrollment.query.filter_by(student_id=student.id)
+        .join(Class).with_entities(Class.school_year).distinct().all()
+    )
+    actual_years  = set(row.school_year for row in all_enrollments_years)
+    current_yr    = dt.now().year
+    buffer_years  = {f"{y}-{y+1}" for y in range(current_yr - 3, current_yr + 2)}
     available_years = sorted(list(actual_years | buffer_years), reverse=True)
-
-    # --- Get enrollments for selected semester/year ---
-    enrollments = Enrollment.query.filter_by(
-        student_id=student.id
-    ).join(Class).filter(
-        Class.school_year == selected_year,
-        Class.semester == selected_semester
-    ).all()
-
-    # --- Build per-class grading data ---
+ 
+    enrollments = (
+        Enrollment.query.filter_by(student_id=student.id)
+        .join(Class)
+        .filter(Class.school_year == selected_year,
+                Class.semester    == selected_semester)
+        .all()
+    )
+ 
+    # Import here to avoid circular import issues
+    from models import TestPaperImage
+ 
     classes_data = []
-
     for enrollment in enrollments:
         cls = enrollment.class_
-
-        # Get all tests for this class
-        tests = Test.query.filter_by(
-            class_id=cls.id
-        ).order_by(Test.test_date, Test.created_at).all()
-
-        # ✅ FIX: Get grading formula FIRST
-        formula = cls.get_grading_formula()
+ 
+        tests = (
+            Test.query.filter_by(class_id=cls.id)
+            .order_by(Test.term_tag, Test.component_tag,
+                      Test.test_date, Test.created_at)
+            .all()
+        )
+ 
+        formula            = cls.get_grading_formula()
         formula_components = formula.get('components', []) if formula else []
-
-        # Build component weight lookup: component_name -> weight
-        component_weights = {c['name']: c['weight'] for c in formula_components}
-
-        # ✅ FIX: Get student's grades with proper structure
+        component_weights  = {c['name']: c['weight'] for c in formula_components}
+ 
         test_grades = {}
         for test in tests:
             grade = Grade.query.filter_by(
-                test_id=test.id,
-                student_id=student.id
+                test_id=test.id, student_id=student.id
             ).first()
-            
+ 
+            # Check if this student has an assigned paper image for this test
+            paper_img = TestPaperImage.query.filter_by(
+                test_id    = test.id,
+                student_id = student.id,
+                status     = 'assigned'
+            ).first()
+ 
             if grade:
-                # Get component scores from the grade
-                component_scores = grade.get_component_scores()
-                
                 test_grades[test.id] = {
-                    'grade_obj': grade,  # The actual Grade object
-                    'component_scores': component_scores,  # Dict of {component_name: [items]}
-                    'final_grade': grade.final_grade,
+                    'grade_obj':             grade,
+                    'component_scores':      grade.get_component_scores(),
+                    'final_grade':           grade.final_grade,
+                    'raw_score':             grade.raw_score,
+                    'max_score':             grade.max_score,
                     'calculated_percentage': grade.calculated_percentage,
-                    'is_overridden': grade.is_overridden,
-                    'override_reason': grade.override_reason
+                    'is_overridden':         grade.is_overridden,
+                    'override_reason':       grade.override_reason,
+                    'paper_image_id':        paper_img.id if paper_img else None,
                 }
             else:
-                # No grade yet - still provide empty structure
                 test_grades[test.id] = {
-                    'grade_obj': None,
-                    'component_scores': {},  # Empty dict
-                    'final_grade': None,
+                    'grade_obj':             None,
+                    'component_scores':      {},
+                    'final_grade':           None,
+                    'raw_score':             None,
+                    'max_score':             None,
                     'calculated_percentage': None,
-                    'is_overridden': False,
-                    'override_reason': None
+                    'is_overridden':         False,
+                    'override_reason':       None,
+                    'paper_image_id':        paper_img.id if paper_img else None,
                 }
-
+ 
         classes_data.append({
-            'class': cls,
-            'enrollment': enrollment,
-            'tests': tests,
-            'test_grades': test_grades,          # test.id -> grade data dict
-            'component_weights': component_weights,  # component_name -> weight %
-            'formula_components': formula_components,  # Full formula structure
-            'final_grade': enrollment.final_grade
+            'class':             cls,
+            'enrollment':        enrollment,
+            'tests':             tests,
+            'test_grades':       test_grades,
+            'component_weights': component_weights,
+            'formula_components': formula_components,
+            'final_grade':       enrollment.final_grade,
         })
-
+ 
     return render_template(
         'student/my_grades.html',
         student=student,

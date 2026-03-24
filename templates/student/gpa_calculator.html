@@ -250,7 +250,100 @@
             text-transform: uppercase;
             margin-top: 4px;
         }
+
+        /* How it works collapsible */
+        .how-it-works {
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .how-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .how-header:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+        
+        .how-body {
+            display: none;
+            padding: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .how-body.open {
+            display: block;
+        }
+        
+        /* Formula box */
+        .how-formula {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        /* Steps */
+        .how-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .how-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        
+        .step-text {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+        
+        .step-text strong {
+            color: var(--text-main);
+        }
+        
+        @media (max-width: 768px) {
+            .how-header {
+                padding: 0.75rem 1rem;
+            }
+            .how-body {
+                padding: 1rem;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -301,6 +394,89 @@
                 Estimate your semestral grade point average based on expected grades.
             </p>
         </header>
+
+        <div class="how-it-works">
+ 
+            <div class="how-header" onclick="toggleHowItWorks(this)">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg style="width:16px;height:16px;stroke:var(--accent-blue);fill:none;stroke-width:2;flex-shrink:0;" viewBox="0 0 24 24">
+                        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>How does this calculator work?</span>
+                </div>
+                <svg class="how-chevron" style="width:16px;height:16px;stroke:var(--text-dim);fill:none;stroke-width:2;transition:transform 0.25s;" viewBox="0 0 24 24">
+                    <path d="M19 9l-7 7-7-7"/>
+                </svg>
+            </div>
+        
+            <div class="how-body" id="howItWorksBody">
+        
+                <!-- Formula -->
+                <div class="how-formula">
+                    <span style="font-size:0.8rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Formula Used</span>
+                    <div style="margin-top:8px;font-size:1rem;color:var(--text-main);">
+                        GPA &nbsp;=&nbsp;
+                        <span style="color:var(--accent-blue);font-weight:600;">Σ (Grade × Units)</span>
+                        &nbsp;÷&nbsp;
+                        <span style="color:var(--accent-blue);font-weight:600;">Σ Units</span>
+                    </div>
+                    <p style="margin-top:6px;font-size:0.82rem;color:var(--text-dim);line-height:1.6;">
+                        Each subject's grade is multiplied by its unit weight, then the total is divided by the sum of all units — this is the standard weighted GPA used by most Philippine colleges and universities.
+                    </p>
+                </div>
+        
+                <!-- Steps -->
+                <div class="how-steps">
+        
+                    <div class="how-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">
+                            <strong>Enter your subjects</strong> — the table is pre-filled with your currently enrolled classes for this semester.
+                        </div>
+                    </div>
+        
+                    <div class="how-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">
+                            <strong>Enter a grade</strong> for each subject using the Philippine grading scale (1.0 = highest, 5.0 = failed). Leave it blank to exclude a subject from the calculation.
+                        </div>
+                    </div>
+        
+                    <div class="how-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">
+                            <strong>Units</strong> are pre-filled from your enrollment. You can adjust them to simulate different credit loads or plan future semesters.
+                        </div>
+                    </div>
+        
+                    <div class="how-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">
+                            <strong>Click Calculate GPA</strong> — the result is your estimated weighted semestral GPA. Add or remove subjects freely using the + and × buttons.
+                        </div>
+                    </div>
+        
+                </div>
+        
+                <!-- Note -->
+                <div style="
+                    background: rgba(88, 166, 255, 0.06);
+                    border: 1px solid rgba(88, 166, 255, 0.18);
+                    border-radius: 6px;
+                    padding: 10px 14px;
+                    font-size: 0.82rem;
+                    color: var(--text-dim);
+                    line-height: 1.6;
+                    margin-top: 1rem;
+                ">
+                    💡 <strong style="color:var(--text-main);">This is an estimator.</strong>
+                    Grades shown here are based on what your teachers have entered so far.
+                    The official GPA on your transcript may differ and is computed by your Professor.
+                </div>
+        
+            </div>
+        </div>
+ 
 
         <!-- Current GPA Display -->
         <div class="current-gpa-display">
@@ -474,6 +650,14 @@
 
         // Initial calculation
         window.onload = calculateGPA;
+
+        function toggleHowItWorks(headerEl) {
+            const body   = document.getElementById('howItWorksBody');
+            const chevron = headerEl.querySelector('.how-chevron');
+            const isOpen  = body.classList.toggle('open');
+            chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

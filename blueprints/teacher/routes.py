@@ -18,6 +18,178 @@ from config import Config
 teacher_bp = Blueprint('teacher', __name__)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPER FUNCTIONS — Add these to routes.py (outside any route, at module level)
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+def recalculate_term_grade(student_id, class_id, term_tag, teacher_id, commit=True):
+    """
+    Recalculate and persist the term-level Philippine grade for one student/term.
+ 
+    Uses a synthetic Grade record linked to the FIRST test of the term
+    as the "term grade holder". This keeps the data model simple —
+    one Grade row per (student, term) rather than a new table.
+ 
+    Returns a dict:
+        {
+          'grade':      float | None,   # Philippine grade, None = INC
+          'display':    str,            # "2.25" or "INC"
+          'percentage': float | None,
+          'missing':    list[str]       # component names with no scores
+        }
+    """
+    from models import Grade, Test, Class
+ 
+    cls = Class.query.get(class_id)
+    if not cls:
+        return {'grade': None, 'display': 'INC', 'percentage': None, 'missing': []}
+ 
+    formula = cls.get_grading_formula()
+    if not formula or 'components' not in formula:
+        return {'grade': None, 'display': 'INC', 'percentage': None, 'missing': ['No formula']}
+ 
+    formula_components = [c['name'] for c in formula['components']]
+ 
+    # ── Check completeness ────────────────────────────────────────────────
+    missing = []
+    comp_averages = {}
+ 
+    for comp in formula['components']:
+        comp_name = comp['name']
+        tests_in_group = Test.query.filter_by(
+            class_id=class_id,
+            term_tag=term_tag,
+            component_tag=comp_name
+        ).all()
+ 
+        if not tests_in_group:
+            missing.append(comp_name)
+            continue
+ 
+        percentages = []
+        for t in tests_in_group:
+            g = Grade.query.filter_by(
+                test_id=t.id, student_id=student_id
+            ).first()
+            if g and g.raw_score is not None and g.max_score and g.max_score > 0:
+                percentages.append((g.raw_score / g.max_score) * 100)
+ 
+        if not percentages:
+            missing.append(comp_name)
+        else:
+            comp_averages[comp_name] = sum(percentages) / len(percentages)
+ 
+    if missing:
+        # Check if ANY scores have been entered at all for this term
+        any_scores = False
+        for comp in formula['components']:
+            comp_name = comp['name']
+            tests_in_group = Test.query.filter_by(
+                class_id=class_id,
+                term_tag=term_tag,
+                component_tag=comp_name
+            ).all()
+            for t in tests_in_group:
+                g = Grade.query.filter_by(
+                    test_id=t.id, student_id=student_id
+                ).first()
+                if g and g.raw_score is not None:
+                    any_scores = True
+                    break
+            if any_scores:
+                break
+
+        return {
+            'grade':      None,
+            'display':    'INC' if any_scores else '—',
+            'percentage': None,
+            'missing':    missing
+        }
+ 
+    # ── Calculate weighted total ──────────────────────────────────────────
+    total_weighted = 0.0
+    for comp in formula['components']:
+        comp_name = comp['name']
+        weight    = comp['weight']
+        total_weighted += comp_averages[comp_name] * (weight / 100)
+ 
+    percentage = round(total_weighted, 2)
+    ph_grade   = cls.convert_to_ph_grade(percentage)
+ 
+    # ── Persist: update enrollment final_grade ────────────────────────────
+    # (The enrollment average is handled separately by _update_enrollment_average)
+    if commit:
+        db.session.commit()
+ 
+    return {
+        'grade':      ph_grade,
+        'display':    f"{ph_grade:.2f}",
+        'percentage': percentage,
+        'missing':    []
+    }
+ 
+ 
+def _compute_term_grade_readonly(student_id, class_obj, term_tag):
+    """
+    Same as recalculate_term_grade but never writes to DB.
+    Used when rendering the grading page.
+    """
+    return recalculate_term_grade(
+        student_id=student_id,
+        class_id=class_obj.id,
+        term_tag=term_tag,
+        teacher_id=None,
+        commit=False
+    )
+ 
+ 
+def _update_enrollment_average(student_id, class_id):
+    """
+    Recompute enrollment.final_grade as the average of all
+    completed term grades for this student in this class.
+    Only terms with a real PH grade (not INC) count.
+    Commits to DB.
+    """
+    from models import Enrollment, Test
+ 
+    cls = Class.query.get(class_id)
+    if not cls:
+        return
+ 
+    term_tags = (
+        db.session.query(Test.term_tag)
+        .filter(Test.class_id == class_id, Test.term_tag.isnot(None))
+        .distinct()
+        .all()
+    )
+    term_tags = [row[0] for row in term_tags]
+ 
+    completed_grades = []
+    for term in term_tags:
+        result = recalculate_term_grade(
+            student_id=student_id,
+            class_id=class_id,
+            term_tag=term,
+            teacher_id=None,
+            commit=False
+        )
+        if result.get('grade') is not None:
+            completed_grades.append(result['grade'])
+ 
+    enrollment = Enrollment.query.filter_by(
+        student_id=student_id, class_id=class_id
+    ).first()
+ 
+    if enrollment:
+        if completed_grades:
+            enrollment.final_grade = round(
+                sum(completed_grades) / len(completed_grades), 2
+            )
+        else:
+            enrollment.final_grade = None
+        db.session.commit()
+ 
+
 # Decorator to check if current user is a teacher
 def teacher_required(f):
     """
@@ -335,8 +507,6 @@ def create_class():
                     raise ValueError("All components must have a name")
                 if comp.get('weight', 0) < 0 or comp.get('weight', 0) > 100:
                     raise ValueError("Component weights must be between 0 and 100")
-                if comp.get('max_points', 0) < 1:
-                    raise ValueError("Max points must be at least 1")
             
         except json.JSONDecodeError:
             flash('Invalid grading formula format.', 'error')
@@ -417,7 +587,7 @@ def delete_class():
         return redirect(url_for('teacher.classes'))
     
     try:
-        class_name = f"{cls.subject.name} - Section {cls.section}"
+        class_name = f"{cls.effective_subject_name} - Section {cls.section}"
         
         # Delete the class (cascades to enrollments, tests, and grades)
         db.session.delete(cls)
@@ -798,95 +968,127 @@ def update_class(class_id):
 @teacher_required
 def grading():
     """
-    Renders the Grading page with year and semester filters (backend filtering).
-    Excel-like interface for entering and managing grades.
+    Main grading page. Supports ?year=, ?semester=, ?class_id= params.
+ 
+    grading_data now contains:
+        tests           — all Test objects for the class (for column headers)
+        students        — list of student data dicts
+        term_tags       — ordered list of distinct term tags (for grouping headers)
+        formula_components — component names from the formula
+ 
+    Each student dict has:
+        student         — Student object
+        enrollment      — Enrollment object
+        test_grades     — {test.id: Grade or None}   (raw scores per activity)
+        term_grades     — {term_tag: {grade, display, percentage}}
     """
     teacher = current_user.teacher_profile
-    
+ 
     current_school_year = Config.get_current_school_year()
-    current_semester = Config.get_current_semester()
-    
-    selected_year = request.args.get('year')      # None if not in URL
-    selected_semester = request.args.get('semester')  # None if not in URL
-
-    # Only default if param was NOT sent at all (first load)
+    current_semester    = Config.get_current_semester()
+ 
+    selected_year     = request.args.get('year')
+    selected_semester = request.args.get('semester')
+ 
     if selected_year is None:
         selected_year = current_school_year
-
     if selected_semester is None:
         selected_semester = current_semester
-
-    # Build query - only filter if not 'all'
+ 
     query = Class.query.filter_by(teacher_id=teacher.id)
     if selected_year != 'all':
         query = query.filter_by(school_year=selected_year)
     if selected_semester != 'all':
         query = query.filter_by(semester=selected_semester)
-    
-    # Execute query
+ 
     classes = query.order_by(
-        Class.school_year.desc(),
-        Class.semester
+        Class.school_year.desc(), Class.semester
     ).all()
-    
-    # Build available years list for dropdown (all years with classes)
+ 
     all_teacher_classes = Class.query.filter_by(teacher_id=teacher.id).all()
     available_years = sorted(
-        list(set([cls.school_year for cls in all_teacher_classes])),
-        reverse=True
+        list(set([c.school_year for c in all_teacher_classes])), reverse=True
     )
-    
-    # Get selected class (from query parameter or first filtered class)
+ 
     selected_class_id = request.args.get('class_id', type=int)
-    
     if selected_class_id:
-        selected_class = Class.query.filter_by(
-            id=selected_class_id,
-            teacher_id=teacher.id
-        ).first()
+        # Only accept this class_id if it's in the filtered list
+        selected_class = next((c for c in classes if c.id == selected_class_id), None)
+        # If not in the filtered list, fall back to first available
+        if not selected_class:
+            selected_class = classes[0] if classes else None
     else:
         selected_class = classes[0] if classes else None
-    
+ 
     grading_data = None
-    
+ 
     if selected_class:
-        # Get all students enrolled in this class
-        enrollments = Enrollment.query.filter_by(
-            class_id=selected_class.id,
-            status='enrolled'
-        ).join(Student).order_by(Student.last_name, Student.first_name).all()
-        
-        # Get all tests for this class
-        tests = Test.query.filter_by(
-            class_id=selected_class.id
-        ).order_by(Test.test_date).all()
-        
-        # Build grading matrix
+        enrollments = (
+            Enrollment.query
+            .filter_by(class_id=selected_class.id, status='enrolled')
+            .join(Student)
+            .order_by(Student.last_name, Student.first_name)
+            .all()
+        )
+ 
+        tests = (
+            Test.query
+            .filter_by(class_id=selected_class.id)
+            .order_by(Test.term_tag, Test.component_tag, Test.test_date, Test.created_at)
+            .all()
+        )
+ 
+        # Collect ordered distinct term tags (preserve entry order)
+        seen_terms = {}
+        for t in tests:
+            if t.term_tag and t.term_tag not in seen_terms:
+                seen_terms[t.term_tag] = True
+        term_tags = list(seen_terms.keys())
+ 
+        formula = selected_class.get_grading_formula()
+        formula_components = [c['name'] for c in formula.get('components', [])] if formula else []
+ 
         students_data = []
         for enrollment in enrollments:
             student = enrollment.student
-            
-            # Get grades for each test
+ 
+            # Per-activity raw grades
             test_grades = {}
             for test in tests:
-                grade = Grade.query.filter_by(
-                    test_id=test.id,
-                    student_id=student.id
+                g = Grade.query.filter_by(
+                    test_id=test.id, student_id=student.id
                 ).first()
-                
-                test_grades[test.id] = grade.final_grade if grade else None
-            
+                test_grades[test.id] = g  # full Grade object or None
+ 
+            # Per-term computed grades
+            term_grades = {}
+            for term in term_tags:
+                result = _compute_term_grade_readonly(
+                    student_id=student.id,
+                    class_obj=selected_class,
+                    term_tag=term
+                )
+                term_grades[term] = result
+ 
             students_data.append({
-                'student': student,
+                'student':    student,
                 'enrollment': enrollment,
-                'test_grades': test_grades
+                'test_grades': test_grades,
+                'term_grades': term_grades
             })
-        
+ 
+        tests_by_term = {}
+        for term in term_tags:
+            tests_by_term[term] = [t for t in tests if t.term_tag == term]
+
         grading_data = {
-            'students': students_data,
-            'tests': tests
+            'students':           students_data,
+            'tests':              tests,
+            'tests_by_term':      tests_by_term,
+            'term_tags':          term_tags,
+            'formula_components': formula_components
         }
-    
+ 
     return render_template(
         'teacher/grading.html',
         teacher=teacher,
@@ -896,8 +1098,8 @@ def grading():
         current_school_year=current_school_year,
         current_semester=current_semester,
         available_years=available_years,
-        selected_year=selected_year or 'all',      # ✅ Pass back to template
-        selected_semester=selected_semester or 'all'  # ✅ Pass back to template
+        selected_year=selected_year or 'all',
+        selected_semester=selected_semester or 'all'
     )
 
 
@@ -905,106 +1107,165 @@ def grading():
 @teacher_required
 def update_grade():
     """
-    API endpoint to update a single grade.
-    Used by the Excel-like grading interface.
+    Update a single cell in the spreadsheet.
+ 
+    For tagged (Method 2) tests:
+        Expects raw_score and max_score in the POST body.
+        Saves them on the Grade record, then triggers recalculate_term_grade()
+        which recomputes the term grade for this student.
+        The cell value returned is either a Philippine grade or "INC".
+ 
+    For untagged (Method 1 / legacy) tests:
+        Accepts a direct grade value as before.
     """
     teacher = current_user.teacher_profile
-    
-    # Get data from request
+ 
     student_id = request.form.get('student_id', type=int)
-    test_id = request.form.get('test_id', type=int)
-    grade_value = request.form.get('grade', type=float)
-    
-    # Verify the test belongs to a class taught by this teacher
+    test_id    = request.form.get('test_id', type=int)
+ 
     test = Test.query.join(Class).filter(
         Test.id == test_id,
         Class.teacher_id == teacher.id
     ).first_or_404()
-    
-    # Get or create grade record
+ 
     grade = Grade.query.filter_by(
-        test_id=test_id,
-        student_id=student_id
+        test_id=test_id, student_id=student_id
     ).first()
-    
+ 
     if not grade:
         grade = Grade(
-            test_id=test_id,
-            student_id=student_id,
-            graded_by=teacher.id
+            test_id=test_id, student_id=student_id, graded_by=teacher.id
         )
         db.session.add(grade)
-    
-    # Update grade
-    grade.final_grade = grade_value
-    grade.calculated_grade = grade_value
+ 
     grade.graded_by = teacher.id
     grade.graded_at = datetime.utcnow()
-    
-    db.session.commit()
-    
-    # Update enrollment final grade (average)
-    enrollment = Enrollment.query.filter_by(
-        student_id=student_id,
-        class_id=test.class_id
-    ).first()
-    
-    if enrollment:
-        all_grades = Grade.query.join(Test).filter(
-            Test.class_id == test.class_id,
-            Grade.student_id == student_id,
-            Grade.final_grade.isnot(None)
-        ).all()
-        
-        if all_grades:
-            avg_grade = sum(g.final_grade for g in all_grades) / len(all_grades)
-            enrollment.final_grade = round(avg_grade, 2)
-            db.session.commit()
-    
-    return jsonify({'success': True, 'grade': grade_value})
+ 
+    if test.is_tagged:
+        # ── Method 2: store raw score, recalculate term ───────────────────
+        raw_score = request.form.get('raw_score', type=float)
+        max_score = request.form.get('max_score', type=float)
+ 
+        if raw_score is None or max_score is None:
+            return jsonify({'success': False, 'error': 'raw_score and max_score required for tagged tests'}), 400
+        if max_score <= 0:
+            return jsonify({'success': False, 'error': 'max_score must be greater than 0'}), 400
+        if raw_score < 0 or raw_score > max_score:
+            return jsonify({'success': False, 'error': f'raw_score must be between 0 and {max_score}'}), 400
+ 
+        grade.raw_score = raw_score
+        grade.max_score = max_score
+        # Individual test cell shows percentage for reference
+        grade.calculated_percentage = round((raw_score / max_score) * 100, 2)
+        # final_grade on this individual test row = percentage (not PH grade)
+        # The PH grade lives on the synthetic term Grade record (see below)
+        grade.final_grade = grade.calculated_percentage
+ 
+        db.session.commit()
+ 
+        # Recalculate the term grade for this student
+        term_result = recalculate_term_grade(
+            student_id=student_id,
+            class_id=test.class_id,
+            term_tag=test.term_tag,
+            teacher_id=teacher.id
+        )
+ 
+        # Update enrollment average
+        _update_enrollment_average(student_id, test.class_id)
+ 
+        return jsonify({
+            'success':            True,
+            'grade':              grade.final_grade,          # individual cell value
+            'term_tag':           test.term_tag,
+            'term_grade':         term_result.get('grade'),   # None = INC
+            'term_grade_display': term_result.get('display'), # "2.25" or "INC"
+            'term_percentage':    term_result.get('percentage'),
+            'missing_components': term_result.get('missing', [])
+        })
+ 
+    else:
+        # ── Method 1 / legacy: direct grade entry ─────────────────────────
+        grade_value = request.form.get('grade', type=float)
+        if grade_value is None:
+            return jsonify({'success': False, 'error': 'grade value required'}), 400
+ 
+        grade.final_grade      = grade_value
+        grade.calculated_grade = grade_value
+        db.session.commit()
+ 
+        _update_enrollment_average(student_id, test.class_id)
+ 
+        return jsonify({'success': True, 'grade': grade_value})
 
 
-# FIX FOR ERROR: "Could not build url for endpoint 'teacher.create_test'"
 @teacher_bp.route('/grading/create-test', methods=['POST'])
 @teacher_required
 def create_test():
     """
-    Create a new test/quiz for a class.
-    FIX: This route was missing, causing the BuildError
+    Create a new test/activity.
+ 
+    Method 2: Accepts term_tag and component_tag so each activity is
+    tagged to a grading period and formula component.
+ 
+    POST fields:
+        class_id       — required
+        title          — required
+        term_tag       — required for Method 2 (e.g. "Prelims")
+        component_tag  — required for Method 2 (must match a formula component name)
+        max_score      — optional, stored on the test for reference
     """
     teacher = current_user.teacher_profile
-    
+ 
     try:
-        class_id = request.form.get('class_id', type=int)
-        title = request.form.get('title', '').strip()
-        
+        class_id      = request.form.get('class_id', type=int)
+        title         = request.form.get('title', '').strip()
+        term_tag      = request.form.get('term_tag', '').strip() or None
+        component_tag = request.form.get('component_tag', '').strip() or None
+ 
         if not class_id or not title:
             flash('Class and title are required.', 'error')
             return redirect(url_for('teacher.grading'))
-        
-        # Verify class belongs to this teacher
+ 
         cls = Class.query.filter_by(
-            id=class_id,
-            teacher_id=teacher.id
+            id=class_id, teacher_id=teacher.id
         ).first()
-        
         if not cls:
             flash('Class not found or access denied.', 'error')
             return redirect(url_for('teacher.grading'))
-        
-        # Create test
+ 
+        # If only one tag is provided, treat as untagged (both required)
+        if bool(term_tag) != bool(component_tag):
+            flash('Both Term and Component must be provided together.', 'error')
+            return redirect(url_for('teacher.grading', class_id=class_id))
+ 
+        # Validate component_tag exists in the formula
+        if component_tag:
+            formula = cls.get_grading_formula()
+            formula_components = [c['name'] for c in formula.get('components', [])]
+            if component_tag not in formula_components:
+                flash(
+                    f'Component "{component_tag}" is not in this class\'s grading formula. '
+                    f'Available: {", ".join(formula_components)}',
+                    'error'
+                )
+                return redirect(url_for('teacher.grading', class_id=class_id))
+ 
         new_test = Test(
-            class_id=class_id,
-            title=title,
-            test_date=datetime.utcnow().date()
+            class_id      = class_id,
+            title         = title,
+            term_tag      = term_tag,
+            component_tag = component_tag,
+            test_date     = datetime.utcnow().date()
         )
-        
+ 
         db.session.add(new_test)
         db.session.commit()
-        
-        flash(f'Test "{title}" created successfully!', 'success')
+ 
+        tag_info = f" [{term_tag} / {component_tag}]" if term_tag else ""
+        flash(f'Test "{title}"{tag_info} created successfully!', 'success')
         return redirect(url_for('teacher.grading', class_id=class_id))
-        
+ 
     except Exception as e:
         db.session.rollback()
         flash(f'Error creating test: {str(e)}', 'error')
@@ -1430,41 +1691,71 @@ def update_components():
 @teacher_required
 def get_student_average():
     """
-    API endpoint to get updated student average for a class
+    Returns the student's current average AND all term grades for a class.
+    Called after every grade save to refresh the spreadsheet.
+ 
+    Response:
+    {
+        "success": true,
+        "average": 2.25,             // enrollment final_grade (or null)
+        "average_display": "2.25",   // string, "INC" if null
+        "term_grades": {
+            "Prelims":  {"grade": 2.25, "display": "2.25", "percentage": 83.2},
+            "Midterms": {"grade": null, "display": "INC",  "percentage": null},
+            "Finals":   {"grade": null, "display": "INC",  "percentage": null}
+        }
+    }
     """
-    teacher = current_user.teacher_profile
-    
+    teacher    = current_user.teacher_profile
     student_id = request.args.get('student_id', type=int)
-    class_id = request.args.get('class_id', type=int)
-    
-    # Verify class belongs to teacher
+    class_id   = request.args.get('class_id', type=int)
+ 
     cls = Class.query.filter_by(
-        id=class_id,
-        teacher_id=teacher.id
+        id=class_id, teacher_id=teacher.id
     ).first_or_404()
-    
-    # Get enrollment
-    enrollment = Enrollment.query.filter_by(
-        student_id=student_id,
-        class_id=class_id
-    ).first()
-    
-    if not enrollment:
-        return jsonify({
-            'success': False,
-            'error': 'Enrollment not found'
-        }), 404
-    
-    # Calculate average from all tests
-    average = calculate_class_average(student_id, class_id)
-    
-    # Update enrollment
-    enrollment.final_grade = average
-    db.session.commit()
-    
+ 
+    # Collect all distinct term_tags used in this class
+    term_tags = (
+        db.session.query(Test.term_tag)
+        .filter(Test.class_id == class_id, Test.term_tag.isnot(None))
+        .distinct()
+        .all()
+    )
+    term_tags = [row[0] for row in term_tags]
+ 
+    term_grades = {}
+    completed_ph_grades = []
+ 
+    for term in term_tags:
+        result = recalculate_term_grade(
+            student_id=student_id,
+            class_id=class_id,
+            term_tag=term,
+            teacher_id=teacher.id,
+            commit=False   # don't commit during a read-only request
+        )
+        term_grades[term] = result
+        if result.get('grade') is not None:
+            completed_ph_grades.append(result['grade'])
+ 
+    # Overall average: average of completed terms only
+    if completed_ph_grades:
+        avg = round(sum(completed_ph_grades) / len(completed_ph_grades), 2)
+        avg_display = f"{avg:.2f}"
+    else:
+        # Check if any term has started (INC) vs nothing entered at all (—)
+        any_inc = any(
+            tg.get('display') == 'INC' 
+            for tg in term_grades.values()
+        )
+        avg = None
+        avg_display = "INC" if any_inc else "—"
+ 
     return jsonify({
-        'success': True,
-        'average': average
+        'success':         True,
+        'average':         avg,
+        'average_display': avg_display,
+        'term_grades':     term_grades
     })
 
 
@@ -1500,3 +1791,348 @@ def update_enrollment_average(student_id, class_id):
         average = calculate_class_average(student_id, class_id)
         enrollment.final_grade = average
         db.session.commit()
+
+
+@teacher_bp.route('/grading/export')
+@teacher_required
+def export_grades():
+    """
+    Export grades for a class as Excel (.xlsx) or CSV (.csv).
+ 
+    Query params:
+        class_id  — required
+        format    — 'xlsx' or 'csv' (default: xlsx)
+    """
+    import io
+    import csv
+    from flask import send_file, Response
+ 
+    teacher = current_user.teacher_profile
+ 
+    class_id     = request.args.get('class_id', type=int)
+    fmt          = request.args.get('format', 'xlsx').lower()
+ 
+    if not class_id:
+        flash('No class selected for export.', 'error')
+        return redirect(url_for('teacher.grading'))
+ 
+    cls = Class.query.filter_by(
+        id=class_id, teacher_id=teacher.id
+    ).first_or_404()
+ 
+    # ── Gather data ──────────────────────────────────────────────────────────
+ 
+    enrollments = (
+        Enrollment.query
+        .filter_by(class_id=class_id, status='enrolled')
+        .join(Student)
+        .order_by(Student.last_name, Student.first_name)
+        .all()
+    )
+ 
+    tests = (
+        Test.query
+        .filter_by(class_id=class_id)
+        .order_by(Test.term_tag, Test.component_tag, Test.test_date, Test.created_at)
+        .all()
+    )
+ 
+    # Ordered distinct term tags
+    seen_terms = {}
+    for t in tests:
+        if t.term_tag and t.term_tag not in seen_terms:
+            seen_terms[t.term_tag] = True
+    term_tags = list(seen_terms.keys())
+ 
+    tests_by_term = {term: [t for t in tests if t.term_tag == term] for term in term_tags}
+ 
+    # Class info
+    subject_name = cls.effective_subject_name
+    subject_code = cls.effective_subject_code
+    section      = cls.section or ''
+    school_year  = cls.school_year
+    semester     = cls.semester
+ 
+    safe_name = f"{subject_code}_{section}_{school_year}_{semester}".replace(' ', '_').replace('/', '-')
+ 
+    # ── Build rows ───────────────────────────────────────────────────────────
+ 
+    # Header row 1: info labels
+    # Header row 2: column names
+    # Data rows: one per student
+ 
+    col_headers = ['Student Name', 'Student ID']
+ 
+    if term_tags:
+        for term in term_tags:
+            for t in tests_by_term[term]:
+                col_headers.append(f'{term} | {t.title}')
+            col_headers.append(f'{term} Grade')
+    else:
+        for t in tests:
+            col_headers.append(t.title)
+ 
+    col_headers.append('Overall Grade')
+ 
+    data_rows = []
+    for enrollment in enrollments:
+        student = enrollment.student
+ 
+        row = [student.get_full_name(), student.student_number]
+ 
+        if term_tags:
+            for term in term_tags:
+                for t in tests_by_term[term]:
+                    g = Grade.query.filter_by(
+                        test_id=t.id, student_id=student.id
+                    ).first()
+                    if g and g.raw_score is not None:
+                        max_s = g.max_score if g.max_score else '?'
+                        row.append(f"{g.raw_score}/{max_s}")
+                    else:
+                        row.append('')
+ 
+                # Term grade
+                result = recalculate_term_grade(
+                    student_id=student.id,
+                    class_id=class_id,
+                    term_tag=term,
+                    teacher_id=None,
+                    commit=False
+                )
+                row.append(result.get('display', '—'))
+        else:
+            for t in tests:
+                g = Grade.query.filter_by(
+                    test_id=t.id, student_id=student.id
+                ).first()
+                if g and g.final_grade is not None:
+                    row.append(f"{g.final_grade:.2f}")
+                else:
+                    row.append('')
+ 
+        # Overall
+        if enrollment.final_grade is not None:
+            row.append(f"{enrollment.final_grade:.2f}")
+        else:
+            row.append('INC' if any(
+                recalculate_term_grade(student.id, class_id, term, None, False).get('display') == 'INC'
+                for term in term_tags
+            ) else '—')
+ 
+        data_rows.append(row)
+ 
+    # ── CSV export ───────────────────────────────────────────────────────────
+ 
+    if fmt == 'csv':
+        output = io.StringIO()
+        writer = csv.writer(output)
+ 
+        # Class info header block
+        writer.writerow(['Subject', subject_name])
+        writer.writerow(['Code', subject_code])
+        writer.writerow(['Section', section])
+        writer.writerow(['School Year', school_year])
+        writer.writerow(['Semester', semester])
+        writer.writerow([])  # blank separator
+ 
+        writer.writerow(col_headers)
+        for row in data_rows:
+            writer.writerow(row)
+ 
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment; filename=grades_{safe_name}.csv'
+            }
+        )
+ 
+    # ── Excel export ─────────────────────────────────────────────────────────
+ 
+    from openpyxl import Workbook
+    from openpyxl.styles import (
+        Font, PatternFill, Alignment, Border, Side
+    )
+    from openpyxl.utils import get_column_letter
+ 
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Grades'
+ 
+    # Styles
+    header_font      = Font(name='Arial', bold=True, color='FFFFFF', size=11)
+    info_font        = Font(name='Arial', bold=True, size=10)
+    label_font       = Font(name='Arial', bold=True, size=9)
+    data_font        = Font(name='Arial', size=9)
+    header_fill      = PatternFill('solid', start_color='1F3864')   # dark navy
+    term_fill        = PatternFill('solid', start_color='2E4D7B')   # medium navy
+    term_grade_fill  = PatternFill('solid', start_color='3A5A8C')   # lighter navy
+    col_header_fill  = PatternFill('solid', start_color='4472C4')   # blue
+    overall_fill     = PatternFill('solid', start_color='375623')   # dark green
+    alt_row_fill     = PatternFill('solid', start_color='EBF3FF')   # light blue tint
+    center           = Alignment(horizontal='center', vertical='center')
+    left             = Alignment(horizontal='left',   vertical='center')
+    thin             = Side(style='thin', color='BFBFBF')
+    border           = Border(left=thin, right=thin, top=thin, bottom=thin)
+ 
+    # ── Row 1–5: Class info block ─────────────────────────────────────────
+    info_pairs = [
+        ('Subject',     subject_name),
+        ('Code',        subject_code),
+        ('Section',     section),
+        ('School Year', school_year),
+        ('Semester',    semester),
+    ]
+    for i, (label, value) in enumerate(info_pairs, start=1):
+        ws.cell(row=i, column=1, value=label).font = info_font
+        cell = ws.cell(row=i, column=2, value=value)
+        cell.font = Font(name='Arial', size=10)
+    
+    info_rows = len(info_pairs)
+    blank_row  = info_rows + 1
+    ws.append([])  # blank separator
+ 
+    # ── Term group header row (only if tagged tests exist) ────────────────
+    current_row = blank_row + 1
+    col_cursor  = 3  # columns 1=Name, 2=ID, then activities
+ 
+    if term_tags:
+        # Row: merged term label spanning activity cols + 1 grade col
+        for r in range(1, current_row):
+            ws.cell(row=r, column=1).fill = PatternFill('solid', start_color='F2F2F2')
+ 
+        # Name + ID headers (merged across group header row)
+        name_cell = ws.cell(row=current_row, column=1, value='Student Name')
+        name_cell.font  = header_font
+        name_cell.fill  = header_fill
+        name_cell.alignment = center
+        name_cell.border = border
+ 
+        id_cell = ws.cell(row=current_row, column=2, value='Student ID')
+        id_cell.font  = header_font
+        id_cell.fill  = header_fill
+        id_cell.alignment = center
+        id_cell.border = border
+ 
+        for term in term_tags:
+            term_tests    = tests_by_term[term]
+            span          = len(term_tests) + 1   # activities + 1 grade col
+            start_col     = col_cursor
+            end_col       = col_cursor + span - 1
+ 
+            # Merge term label
+            if span > 1:
+                ws.merge_cells(
+                    start_row=current_row, start_column=start_col,
+                    end_row=current_row,   end_column=end_col
+                )
+            cell = ws.cell(row=current_row, column=start_col, value=term)
+            cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=10)
+            cell.fill      = term_fill
+            cell.alignment = center
+            cell.border    = border
+ 
+            col_cursor += span
+ 
+        # Overall column header (group row)
+        ov_cell = ws.cell(row=current_row, column=col_cursor, value='Overall')
+        ov_cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=10)
+        ov_cell.fill      = overall_fill
+        ov_cell.alignment = center
+        ov_cell.border    = border
+ 
+        current_row += 1
+ 
+    # ── Activity-level column headers ────────────────────────────────────
+    ws.cell(row=current_row, column=1, value='Student Name').font  = label_font
+    ws.cell(row=current_row, column=1).fill      = col_header_fill
+    ws.cell(row=current_row, column=1).alignment = left
+    ws.cell(row=current_row, column=1).font      = Font(name='Arial', bold=True, color='FFFFFF', size=9)
+    ws.cell(row=current_row, column=1).border    = border
+ 
+    ws.cell(row=current_row, column=2, value='Student ID').fill      = col_header_fill
+    ws.cell(row=current_row, column=2).alignment = center
+    ws.cell(row=current_row, column=2).font      = Font(name='Arial', bold=True, color='FFFFFF', size=9)
+    ws.cell(row=current_row, column=2).border    = border
+ 
+    col_cursor = 3
+    if term_tags:
+        for term in term_tags:
+            for t in tests_by_term[term]:
+                cell = ws.cell(row=current_row, column=col_cursor, value=t.title)
+                cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=8)
+                cell.fill      = col_header_fill
+                cell.alignment = center
+                cell.border    = border
+                col_cursor += 1
+            # Term grade column header
+            cell = ws.cell(row=current_row, column=col_cursor, value='Grade')
+            cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=9)
+            cell.fill      = term_grade_fill
+            cell.alignment = center
+            cell.border    = border
+            col_cursor += 1
+    else:
+        for t in tests:
+            cell = ws.cell(row=current_row, column=col_cursor, value=t.title)
+            cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=9)
+            cell.fill      = col_header_fill
+            cell.alignment = center
+            cell.border    = border
+            col_cursor += 1
+ 
+    # Overall
+    cell = ws.cell(row=current_row, column=col_cursor, value='Overall Grade')
+    cell.font      = Font(name='Arial', bold=True, color='FFFFFF', size=9)
+    cell.fill      = overall_fill
+    cell.alignment = center
+    cell.border    = border
+ 
+    current_row += 1
+    total_cols = col_cursor
+ 
+    # ── Data rows ─────────────────────────────────────────────────────────
+    for idx, row_values in enumerate(data_rows):
+        is_alt = (idx % 2 == 1)
+        for col_i, value in enumerate(row_values, start=1):
+            cell = ws.cell(row=current_row, column=col_i, value=value)
+            cell.font   = data_font
+            cell.border = border
+            if col_i == 1:
+                cell.alignment = left
+            else:
+                cell.alignment = center
+            if is_alt:
+                cell.fill = alt_row_fill
+            # Highlight INC in orange
+            if value == 'INC':
+                cell.font = Font(name='Arial', size=9, bold=True, color='D29922')
+        current_row += 1
+ 
+    # ── Column widths ─────────────────────────────────────────────────────
+    ws.column_dimensions['A'].width = 28   # Student Name
+    ws.column_dimensions['B'].width = 16   # Student ID
+    for col_i in range(3, total_cols + 1):
+        ws.column_dimensions[get_column_letter(col_i)].width = 14
+ 
+    # ── Row heights ───────────────────────────────────────────────────────
+    for r in range(1, current_row):
+        ws.row_dimensions[r].height = 18
+ 
+    # ── Freeze panes: freeze after name + ID columns ──────────────────────
+    freeze_row = blank_row + 2 if term_tags else blank_row + 1
+    ws.freeze_panes = ws.cell(row=freeze_row + 1, column=3)
+ 
+    # ── Stream to client ──────────────────────────────────────────────────
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+ 
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f'grades_{safe_name}.xlsx'
+    )

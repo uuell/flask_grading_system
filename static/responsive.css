@@ -1,0 +1,603 @@
+/* ============================================================
+   ACADIFY — RESPONSIVE STYLES
+   Add <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
+   to the <head> of every template (after existing styles).
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   CSS CUSTOM PROPERTIES (shared tokens)
+   ---------------------------------------------------------- */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+  --transition-speed: 0.25s;
+}
+
+/* ----------------------------------------------------------
+   GLOBAL MOBILE RESETS
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  html { font-size: 15px; }
+
+  /* Prevent horizontal scroll */
+  body { overflow-x: hidden; }
+
+  /* Make images/tables scroll horizontally instead of breaking layout */
+  img { max-width: 100%; height: auto; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ----------------------------------------------------------
+   HAMBURGER BUTTON (injected via JS into every page)
+   ---------------------------------------------------------- */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10001;
+  width: 42px;
+  height: 42px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  transition: background var(--transition-speed);
+}
+
+.hamburger-btn:hover { background: #21262d; }
+
+.hamburger-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #c9d1d9;
+  border-radius: 2px;
+  transition: transform var(--transition-speed), opacity var(--transition-speed);
+}
+
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay behind sidebar when open on mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+  .hamburger-btn { display: flex; }
+  .sidebar-overlay.visible { display: block; }
+}
+
+/* ----------------------------------------------------------
+   SIDEBAR — MOBILE DRAWER
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* All sidebars slide off-screen by default */
+  .sidebar,
+  nav.sidebar {
+    position: fixed !important;
+    left: -280px !important;
+    top: 0 !important;
+    width: 260px !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    transition: left var(--transition-speed) ease !important;
+    overflow-y: auto !important;
+    padding: 1.5rem !important;
+  }
+
+  /* Restore hidden text/labels inside sidebar */
+  .sidebar .nav-label,
+  .sidebar .nav-item span,
+  .sidebar .logo span,
+  nav.sidebar .nav-label,
+  nav.sidebar .nav-item span,
+  nav.sidebar .logo span {
+    display: block !important;
+  }
+
+  /* Re-align nav items */
+  .sidebar .nav-item,
+  nav.sidebar .nav-item {
+    justify-content: flex-start !important;
+  }
+
+  /* Open state */
+  .sidebar.sidebar-open,
+  nav.sidebar.sidebar-open {
+    left: 0 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Main content fills full width */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1.25rem !important;
+    padding-top: 4rem !important; /* room for hamburger */
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Body flex column when sidebar is hidden */
+  body {
+    flex-direction: column;
+  }
+}
+
+/* ----------------------------------------------------------
+   LANDING PAGE (index.html)
+   ---------------------------------------------------------- */
+@media (max-width: 968px) {
+  /* Hero section */
+  .hero {
+    grid-template-columns: 1fr !important;
+    padding: 3rem 1.5rem !important;
+    gap: 2rem !important;
+  }
+
+  .hero-content h1 { font-size: 2.25rem !important; }
+
+  /* Navbar */
+  .navbar {
+    padding: 1rem 1.5rem !important;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between !important;
+  }
+
+  .nav-links { display: none; } /* hide desktop nav links on mobile */
+
+  /* Dashboard preview table — scroll */
+  .dashboard-preview {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Dashboard preview grid */
+  .dashboard-preview > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sidebar-preview { display: none; } /* hide inner sidebar in hero mockup */
+
+  /* Footer */
+  .footer-content {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 1rem;
+  }
+  .footer-nav-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .hero-content h1 { font-size: 1.75rem !important; }
+  .nav-buttons .btn { padding: 0.5rem 1rem !important; font-size: 0.8rem !important; }
+}
+
+/* ----------------------------------------------------------
+   AUTH PAGES (login, forgot password)
+   ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  .login-card,
+  .card {
+    padding: 1.5rem !important;
+    margin: 0.5rem !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   ADMIN DASHBOARD (admin/dashboard.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .reg-layout { grid-template-columns: 1fr !important; gap: 2rem !important; }
+  .csv-section { border-left: none !important; padding-left: 0 !important; border-top: 1px solid #30363d; padding-top: 2rem !important; }
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .reg-tabs { flex-wrap: wrap; }
+  .tab-btn { flex: 1; min-width: 120px; font-size: 0.8rem; padding: 0.75rem 1rem; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .welcome-section h1 { font-size: 1.25rem; }
+  .main-content { padding: 1rem !important; padding-top: 4rem !important; }
+
+  .user-table th:nth-child(4),
+  .user-table td:nth-child(4),
+  .user-table th:nth-child(5),
+  .user-table td:nth-child(5) {
+    display: none; /* hide less critical columns */
+  }
+}
+
+/* ----------------------------------------------------------
+   ADMIN USER MANAGEMENT (admin/user_management.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .search-bar { width: 100% !important; }
+  .header-actions { flex-direction: column !important; align-items: flex-start !important; }
+  .filters { flex-wrap: wrap; }
+}
+
+@media (max-width: 768px) {
+  /* User drawer becomes bottom sheet */
+  .drawer {
+    width: 100% !important;
+    right: 0 !important;
+    bottom: -100vh !important;
+    top: auto !important;
+    height: 85vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid #30363d !important;
+    transition: bottom var(--transition-speed) ease !important;
+  }
+  .drawer.open {
+    bottom: 0 !important;
+    right: 0 !important;
+  }
+
+  /* Hide less important columns in user table */
+  table th:nth-child(3),
+  table td:nth-child(3),
+  table th:nth-child(4),
+  table td:nth-child(4) { display: none; }
+
+  .pagination { flex-direction: column; gap: 0.75rem; text-align: center; }
+  .page-btns { flex-wrap: wrap; justify-content: center; }
+}
+
+/* ----------------------------------------------------------
+   ADMIN SETTINGS (admin/settings.html)
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .settings-card { padding: 1.25rem !important; }
+  .button-group { flex-direction: column !important; }
+  .info-box .info-row { flex-direction: column; gap: 0.25rem; }
+}
+
+/* ----------------------------------------------------------
+   TEACHER DASHBOARD (teacher/dashboard.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .course-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .course-grid { grid-template-columns: 1fr !important; }
+
+  /* Dashboard header */
+  .welcome-section > div { flex-direction: column !important; align-items: flex-start !important; }
+
+  /* Filter bar */
+  .welcome-section > div > div[style*="display: flex"] {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .welcome-section select,
+  .welcome-section input[type="text"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   TEACHER CLASSES (teacher/classes.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .class-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 768px) {
+  .class-grid { grid-template-columns: 1fr !important; }
+  .header-actions { flex-direction: column !important; gap: 1rem !important; }
+  .filter-bar { flex-wrap: wrap !important; }
+  .filter-bar > * { width: 100% !important; }
+  .filter-bar input[style*="width: 130px"] { width: 100% !important; }
+
+  /* Modal */
+  .modal { padding: 1.25rem !important; margin: 1rem !important; max-height: 95vh !important; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .modal-footer { flex-direction: column-reverse !important; }
+  .modal-footer button,
+  .modal-footer .btn-secondary,
+  .modal-footer .btn-primary { width: 100% !important; justify-content: center !important; }
+
+  /* Formula builder */
+  .component-row { grid-template-columns: 2fr 1fr auto !important; }
+}
+
+/* ----------------------------------------------------------
+   TEACHER GRADING (teacher/grading.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .grading-toolbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+    padding: 1rem 1.25rem !important;
+  }
+  .class-selector { flex-wrap: wrap !important; gap: 0.5rem !important; }
+  .action-group { width: 100% !important; justify-content: flex-end !important; }
+}
+
+@media (max-width: 768px) {
+  /* Grading toolbar becomes stacked */
+  .grading-toolbar { padding-top: 4rem !important; } /* room for hamburger */
+  .select-input { min-width: 140px !important; font-size: 0.8rem !important; }
+
+  /* Component modal */
+  .component-modal { width: 96vw !important; max-height: 90vh !important; }
+  .component-modal .modal-header { padding: 1rem 1.25rem !important; }
+  .component-modal .modal-body { padding: 1rem 1.25rem !important; }
+  .component-modal .modal-footer {
+    padding: 1rem 1.25rem !important;
+    flex-direction: column-reverse !important;
+    gap: 0.75rem !important;
+  }
+  .component-modal .modal-actions { width: 100% !important; justify-content: flex-end !important; }
+  .component-item { flex-wrap: wrap !important; }
+  .item-input-group { flex-wrap: wrap !important; }
+
+  /* AI Modal */
+  .modal { width: 95vw !important; }
+}
+
+/* ----------------------------------------------------------
+   TEACHER CLASS DETAIL (teacher/class_detail.html)
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .header-title { flex-direction: column !important; gap: 1rem !important; align-items: flex-start !important; }
+  .action-buttons { width: 100% !important; }
+  .action-buttons .btn { width: 100% !important; justify-content: center !important; }
+  .info-grid { grid-template-columns: 1fr !important; }
+  .detail-grid { grid-template-columns: 1fr !important; }
+
+  /* Responsive student table */
+  .section table th:nth-child(2),
+  .section table td:nth-child(2) { display: none; }
+}
+
+/* ----------------------------------------------------------
+   TEACHER ANALYTICS (teacher/analytics.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .charts-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+  .filter-bar { flex-wrap: wrap !important; }
+  .filter-bar .filter-group { flex: 1; min-width: 120px; }
+  .distribution-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Analytics table */
+  .performance-table table th:nth-child(4),
+  .performance-table table td:nth-child(4) { display: none; }
+}
+
+/* ----------------------------------------------------------
+   TEACHER PROFILE (teacher/profile.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .profile-grid { grid-template-columns: 1fr !important; }
+  .profile-grid > div[style*="span 2"] { grid-column: span 1 !important; }
+}
+
+@media (max-width: 768px) {
+  .profile-header { flex-direction: column !important; text-align: center !important; align-items: center !important; }
+  .profile-tags { justify-content: center !important; }
+  .info-group { grid-template-columns: 1fr !important; }
+  .stats-mini-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Password modal */
+  .modal { width: 95vw !important; padding: 1.25rem !important; }
+  .modal-footer { flex-direction: column-reverse !important; gap: 0.5rem !important; }
+  .modal-footer button { width: 100% !important; }
+}
+
+/* ----------------------------------------------------------
+   STUDENT DASHBOARD (student/dashboard.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .dashboard-grid .academic-overview { grid-column: span 12 !important; }
+  .dashboard-grid .quick-stats { grid-column: span 12 !important; }
+}
+
+@media (max-width: 768px) {
+  /* Header section */
+  .header-section { flex-direction: column !important; gap: 1rem !important; }
+  .filter-bar { flex-wrap: wrap !important; }
+  .filter-bar > * { flex: 1; min-width: 100px; }
+  .custom-year-input { min-width: 80px !important; }
+
+  /* Quick stats */
+  .quick-stats { grid-template-columns: repeat(2, 1fr) !important; }
+  .standing-card { grid-column: span 2 !important; flex-direction: column !important; gap: 0.5rem !important; align-items: flex-start !important; }
+
+  /* Recent grades table */
+  .classes-card table th:nth-child(4),
+  .classes-card table td:nth-child(4),
+  .classes-card table th:nth-child(5),
+  .classes-card table td:nth-child(5) { display: none; }
+}
+
+@media (max-width: 480px) {
+  .quick-stats { grid-template-columns: 1fr !important; }
+  .standing-card { grid-column: span 1 !important; }
+}
+
+/* ----------------------------------------------------------
+   STUDENT MY CLASSES (student/my_classes.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column !important; gap: 1rem !important; }
+  .filter-bar { flex-wrap: wrap !important; }
+  .filter-bar > * { flex: 1; min-width: 90px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Classes table — show only key columns */
+  .table-header-row,
+  .class-row {
+    grid-template-columns: 90px 1fr 80px !important;
+  }
+
+  .table-header-row > *:nth-child(4),
+  .class-row > *:nth-child(4),
+  .table-header-row > *:nth-child(5),
+  .class-row > *:nth-child(5),
+  .table-header-row > *:nth-child(6),
+  .class-row > *:nth-child(6) {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr !important; }
+}
+
+/* ----------------------------------------------------------
+   STUDENT MY GRADES (student/my_grades.html)
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .page-header { flex-direction: column !important; gap: 1rem !important; }
+  .filter-bar { flex-wrap: wrap !important; }
+  .filter-bar > * { flex: 1; min-width: 90px; }
+  .search-input { width: 100% !important; }
+
+  /* Component modal becomes near-fullscreen */
+  .component-modal { width: 96vw !important; max-height: 90vh !important; }
+  .component-modal .modal-header { padding: 1rem !important; }
+  .component-modal .modal-body { padding: 1rem !important; }
+  .component-modal .modal-footer {
+    padding: 1rem !important;
+    flex-direction: column-reverse !important;
+    gap: 0.75rem !important;
+  }
+  .component-item { flex-wrap: wrap !important; }
+  .class-card-header { flex-direction: column !important; gap: 0.75rem !important; align-items: flex-start !important; }
+}
+
+/* ----------------------------------------------------------
+   STUDENT GPA CALCULATOR (student/gpa_calculator.html)
+   ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  .current-gpa-display { grid-template-columns: 1fr !important; gap: 1rem !important; }
+  .grade-row {
+    grid-template-columns: 1fr 80px 60px 32px !important;
+    gap: 0.5rem !important;
+  }
+  .actions { flex-direction: column !important; }
+  .actions .btn { width: 100% !important; text-align: center !important; }
+  .result-panel { flex-direction: column !important; gap: 1rem !important; }
+  .gpa-display { font-size: 2rem !important; }
+
+  /* Grade scale table */
+  .main-content > section table { font-size: 0.8rem; }
+}
+
+/* ----------------------------------------------------------
+   STUDENT PROFILE (student/profile.html)
+   ---------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .profile-grid { grid-template-columns: 1fr !important; }
+  .profile-grid > div[style*="span 2"] { grid-column: span 1 !important; }
+}
+
+@media (max-width: 768px) {
+  .profile-header { flex-direction: column !important; text-align: center !important; align-items: center !important; }
+  .info-group { grid-template-columns: 1fr !important; }
+  .modal { width: 95vw !important; padding: 1.25rem !important; }
+  .modal-footer { flex-direction: column-reverse !important; gap: 0.5rem !important; }
+  .modal-footer button { width: 100% !important; }
+}
+
+/* ----------------------------------------------------------
+   ERROR PAGES (404, 403, 500)
+   ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  .error-code { font-size: 5rem !important; }
+  .error-title { font-size: 1.25rem !important; }
+  .container { padding: 1rem !important; }
+  .back-btn { padding: 10px 18px !important; font-size: 0.85rem !important; }
+}
+
+/* ----------------------------------------------------------
+   FORGOT PASSWORD
+   ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  .card { padding: 1.5rem !important; margin: 0.5rem !important; }
+  .contact-info { font-size: 0.8rem; }
+}
+
+/* ----------------------------------------------------------
+   UTILITY HELPERS
+   ---------------------------------------------------------- */
+
+/* Prevent text overflow on small screens */
+@media (max-width: 768px) {
+  .student-name,
+  .class-name,
+  .class-subtitle,
+  h1, h2, h3 {
+    word-break: break-word;
+  }
+
+  /* Make all single-input form groups full-width on mobile */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100% !important;
+  }
+
+  /* Full-width buttons in action groups on mobile */
+  .action-group .btn,
+  .modal-actions .btn {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* ----------------------------------------------------------
+   PRINT STYLES (bonus)
+   ---------------------------------------------------------- */
+@media print {
+  .sidebar,
+  nav.sidebar,
+  .hamburger-btn,
+  .sidebar-overlay,
+  .nav-buttons,
+  .action-group,
+  .filter-bar { display: none !important; }
+
+  .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  body { background: white !important; color: black !important; }
+}

@@ -399,6 +399,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -481,13 +482,10 @@
                     Personal Information
                 </h2>
                 <div class="info-group">
-                    <div class="field">
-                        <label>First Name</label>
-                        <p>{{ student.first_name }}</p>
-                    </div>
-                    <div class="field">
-                        <label>Last Name</label>
-                        <p>{{ student.last_name }}</p>
+                    <!-- Single consolidated Name field -->
+                    <div class="field" style="grid-column: span 2;">
+                        <label>Name</label>
+                        <p>{{ student.first_name }} {{ student.last_name }}</p>
                     </div>
                     <div class="field" style="grid-column: span 2;">
                         <label>Email Address</label>
@@ -584,24 +582,17 @@
 
         function closePasswordModal() {
             document.getElementById('passwordModal').classList.remove('show');
-            // Clear form
             document.querySelector('#passwordModal form').reset();
         }
 
-        // Close modal when clicking overlay
         document.getElementById('passwordModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePasswordModal();
-            }
+            if (e.target === this) closePasswordModal();
         });
 
-        // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closePasswordModal();
-            }
+            if (e.key === 'Escape') closePasswordModal();
         });
     </script>
-
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

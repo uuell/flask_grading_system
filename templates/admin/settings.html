@@ -186,6 +186,7 @@
 
         .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -221,17 +222,6 @@
             <h1 style="color: #fff; margin-bottom: 5px;">System Settings</h1>
             <p style="color: var(--text-dim); font-size: 0.9rem;">Configure academic year and system preferences</p>
         </header>
-
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
 
         <!-- Academic Year Settings -->
         <div class="settings-card">
@@ -353,5 +343,6 @@
         }
     }
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

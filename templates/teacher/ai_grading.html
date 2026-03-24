@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify - AI Grading</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --sidebar-color: #161b22;
+            --card-color: #21262d;
+            --accent-purple: #bc8cff;
+            --accent-blue: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-green: #238636;
+            --error-red: #f85149;
+            --warning-orange: #d29922;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; font-family:var(--font-main); }
+        body { background:var(--bg-color); color:var(--text-main); display:flex; min-height:100vh; }
+
+        .sidebar { width:260px; background:var(--sidebar-color); border-right:1px solid var(--border-color);
+            display:flex; flex-direction:column; padding:1.5rem; position:sticky; top:0; height:100vh; flex-shrink:0; }
+        .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.25rem; color:#fff; margin-bottom:2.5rem; }
+        .logo svg { width:24px; height:24px; stroke:var(--accent-purple); fill:none; }
+        .nav-group { margin-bottom:2rem; }
+        .nav-label { font-size:0.7rem; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.1em; margin-bottom:1rem; display:block; }
+        .nav-item { display:flex; align-items:center; gap:12px; padding:12px; border-radius:6px; color:var(--text-main); text-decoration:none; font-size:0.9rem; margin-bottom:4px; transition:background 0.2s; }
+        .nav-item:hover { background:var(--border-color); }
+        .nav-item.active { background:rgba(188,140,255,0.1); color:var(--accent-purple); font-weight:600; }
+        .nav-item.logout { margin-top:auto; color:var(--error-red); }
+        .icon { width:18px; height:18px; stroke:currentColor; fill:none; }
+
+        .main-content { flex:1; padding:2rem; overflow-y:auto; }
+        .page-header { margin-bottom:1.75rem; }
+        .page-header h1 { font-size:1.5rem; font-weight:700; color:#fff; margin-bottom:4px; display:flex; align-items:center; gap:10px; }
+        .page-header p { color:var(--text-dim); font-size:0.875rem; }
+
+        /* ── Picker card ── */
+        .picker-card { background:var(--sidebar-color); border:1px solid var(--border-color); border-radius:10px; padding:1.5rem; margin-bottom:1.5rem; }
+        .picker-card h2 { font-size:0.95rem; font-weight:600; color:#fff; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-color); }
+
+        /* Filter row — semester + year */
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Class + test row */
+        .picker-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:0; }
+
+        .field-group label { display:block; font-size:0.72rem; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.05em; margin-bottom:6px; }
+        .select-input { width:100%; background:var(--card-color); border:1px solid var(--border-color); color:var(--text-main); padding:9px 12px; border-radius:6px; font-size:0.875rem; outline:none; transition:border-color 0.2s; }
+        .select-input:focus { border-color:var(--accent-purple); }
+
+        /* Active filter indicator */
+        .filter-active-note {
+            display: none;
+            font-size: 0.78rem;
+            color: var(--accent-blue);
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-active-note.visible { display: flex; }
+        .clear-filter-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color 0.15s;
+        }
+        .clear-filter-btn:hover { color: var(--text-main); }
+
+        /* No classes message */
+        .no-classes-msg {
+            display: none;
+            font-size: 0.82rem;
+            color: var(--warning-orange);
+            padding: 8px 12px;
+            background: rgba(210,153,34,0.08);
+            border: 1px solid rgba(210,153,34,0.2);
+            border-radius: 6px;
+            margin-top: 0.75rem;
+        }
+
+        /* ── Buttons ── */
+        .btn { padding:9px 18px; border-radius:6px; font-size:0.875rem; font-weight:600; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:7px; transition:opacity 0.15s, transform 0.15s; text-decoration:none; }
+        .btn:disabled { opacity:0.45; cursor:not-allowed; }
+        .btn-ai { background:linear-gradient(135deg,#6e40c9,#bc8cff); color:#fff; box-shadow:0 4px 14px rgba(110,64,201,0.3); }
+        .btn-ai:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 18px rgba(110,64,201,0.45); }
+        .btn-outline { background:transparent; border:1px solid var(--border-color); color:var(--text-main); }
+        .btn-outline:hover:not(:disabled) { border-color:var(--accent-blue); color:var(--accent-blue); }
+        .btn-success { background:var(--success-green); color:#fff; }
+        .btn-sm { padding:5px 12px; font-size:0.78rem; }
+
+        #reviewPanel { display:none; }
+        #reviewPanel.visible { display:block; }
+
+        .review-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem; }
+        .review-title { font-size:1rem; font-weight:700; color:#fff; }
+        .review-sub { font-size:0.82rem; color:var(--text-dim); margin-top:2px; }
+        .badge-row { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+        .badge { font-size:0.75rem; font-weight:600; padding:4px 10px; border-radius:999px; }
+        .badge-pending  { background:rgba(88,166,255,0.12); color:var(--accent-blue); }
+        .badge-assigned { background:rgba(35,134,54,0.12); color:#3fb950; }
+        .badge-error    { background:rgba(248,81,73,0.12); color:var(--error-red); }
+
+        .upload-card { background:var(--sidebar-color); border:1px solid var(--border-color); border-radius:10px; padding:1.25rem; margin-bottom:1.25rem; }
+        .upload-area { border:2px dashed var(--border-color); border-radius:8px; padding:1.5rem; text-align:center; transition:border-color 0.2s, background 0.2s; cursor:pointer; }
+        .upload-area:hover, .upload-area.drag-over { border-color:var(--accent-blue); background:rgba(88,166,255,0.04); }
+        .upload-area p { margin:4px 0; color:var(--text-dim); font-size:0.85rem; }
+        .upload-area p.upload-title { font-weight:600; color:var(--text-main); font-size:0.95rem; }
+        .progress-wrap { height:8px; background:var(--border-color); border-radius:999px; overflow:hidden; margin-top:0.75rem; }
+        .progress-fill { height:100%; background:var(--accent-blue); border-radius:999px; transition:width 0.3s; }
+        .progress-text { font-size:0.8rem; color:var(--text-dim); text-align:center; margin-top:5px; }
+
+        .confirm-bar { display:none; justify-content:flex-end; align-items:center; gap:0.75rem; margin-bottom:1rem; }
+        .confirm-bar.visible { display:flex; }
+        .confirm-bar span { font-size:0.82rem; color:var(--text-dim); }
+
+        .papers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1.25rem; }
+        .paper-card { background:var(--sidebar-color); border:2px solid var(--border-color); border-radius:10px; overflow:hidden; transition:border-color 0.2s; }
+        .paper-card.conf-high   { border-color:rgba(35,134,54,0.45); }
+        .paper-card.conf-medium { border-color:rgba(234,179,8,0.45); }
+        .paper-card.conf-low, .paper-card.conf-none { border-color:rgba(248,81,73,0.3); }
+        .paper-card[data-status="assigned"] { border-color:rgba(35,134,54,0.7); }
+        .paper-card[data-status="error"]    { border-color:rgba(248,81,73,0.6); }
+
+        .card-thumb-wrap { position:relative; height:170px; background:#0d1117; overflow:hidden; cursor:zoom-in; }
+        .card-thumb { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.2s; }
+        .card-thumb-wrap:hover .card-thumb { transform:scale(1.04); }
+        .thumb-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.82rem; font-weight:600; opacity:0; transition:opacity 0.2s; }
+        .card-thumb-wrap:hover .thumb-overlay { opacity:1; }
+
+        .card-body { padding:0.875rem; }
+        .card-filename { font-size:0.75rem; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:0.6rem; }
+        .ocr-row { display:flex; gap:0.5rem; margin-bottom:3px; font-size:0.8rem; }
+        .ocr-label { color:var(--text-dim); min-width:75px; flex-shrink:0; }
+        .ocr-value { color:var(--text-main); font-weight:500; }
+        .ocr-null  { color:var(--text-dim); font-style:italic; }
+        .status-row { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; margin:0.6rem 0; }
+        .status-badge { font-size:0.72rem; font-weight:600; padding:2px 7px; border-radius:999px; }
+        .status-pending   { background:rgba(88,166,255,0.1); color:var(--accent-blue); }
+        .status-uncertain { background:rgba(234,179,8,0.1); color:#d4a017; }
+        .status-assigned  { background:rgba(35,134,54,0.1); color:#3fb950; }
+        .status-error     { background:rgba(248,81,73,0.1); color:var(--error-red); }
+        .conf-badge { font-size:0.7rem; padding:2px 6px; border-radius:999px; }
+        .conf-high   { background:rgba(35,134,54,0.1); color:#3fb950; }
+        .conf-medium { background:rgba(234,179,8,0.1); color:#d4a017; }
+        .conf-low, .conf-none { background:rgba(248,81,73,0.1); color:var(--error-red); }
+        .error-box { background:rgba(248,81,73,0.07); border:1px solid rgba(248,81,73,0.25); border-radius:6px; padding:7px 9px; font-size:0.78rem; color:var(--error-red); margin-bottom:0.6rem; }
+        .suggestion-text { font-size:0.8rem; margin:0 0 5px; }
+        .suggestion-text.conf-high   { color:#3fb950; }
+        .suggestion-text.conf-medium { color:#d4a017; }
+        .assign-row { display:flex; gap:0.4rem; align-items:center; }
+        .student-select { flex:1; min-width:0; background:var(--card-color); border:1px solid var(--border-color); color:var(--text-main); border-radius:6px; padding:5px 8px; font-size:0.78rem; }
+        .student-select:focus { outline:none; border-color:var(--accent-purple); }
+        .assigned-name { display:block; color:#3fb950; font-weight:600; font-size:0.82rem; margin-bottom:3px; }
+        .reassign-row { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; margin-top:6px; }
+        .delete-blocked-msg { display:none; background:rgba(210,153,34,0.08); border:1px solid rgba(210,153,34,0.3); border-radius:6px; padding:7px 10px; font-size:0.78rem; color:var(--warning-orange); margin-top:6px; line-height:1.5; }
+        .delete-blocked-msg.visible { display:block; }
+        .paper-card[data-status="assigned"] .delete-btn { opacity:0.35; cursor:not-allowed; }
+
+        .empty-state { grid-column:1/-1; text-align:center; padding:2.5rem; color:var(--text-dim); font-size:0.875rem; background:var(--sidebar-color); border:1px solid var(--border-color); border-radius:10px; }
+
+        #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out; }
+        #lightboxImg { max-width:92vw; max-height:92vh; border-radius:8px; box-shadow:0 8px 40px rgba(0,0,0,0.7); pointer-events:none; }
+        .lb-close { position:absolute; top:1.5rem; right:1.5rem; background:none; border:none; color:#fff; font-size:1.75rem; cursor:pointer; opacity:0.7; }
+        .lb-close:hover { opacity:1; }
+
+        .how-card { background:var(--sidebar-color); border:1px solid var(--border-color); border-radius:10px; padding:1.5rem; margin-top:1.5rem; }
+        .how-card h2 { font-size:0.95rem; font-weight:600; color:#fff; margin-bottom:1.25rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-color); }
+        .steps { display:flex; flex-direction:column; gap:0.875rem; }
+        .step { display:flex; align-items:flex-start; gap:0.875rem; }
+        .step-num { width:26px; height:26px; border-radius:50%; flex-shrink:0; margin-top:1px; background:rgba(188,140,255,0.12); border:1px solid rgba(188,140,255,0.3); color:var(--accent-purple); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+        .step-text strong { display:block; font-size:0.86rem; color:var(--text-main); margin-bottom:2px; }
+        .step-text span { font-size:0.8rem; color:var(--text-dim); line-height:1.5; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .papers-grid { grid-template-columns: repeat(2, 1fr); }
+            .filter-row  { grid-template-columns: 1fr 1fr; }
+            .picker-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-x: hidden; }
+            .sidebar, nav.sidebar { position:fixed !important; left:-280px !important; top:0 !important; width:260px !important; height:100vh !important; z-index:9999 !important; transition:left 0.25s ease !important; overflow-y:auto !important; }
+            .sidebar.sidebar-open, nav.sidebar.sidebar-open { left:0 !important; box-shadow:4px 0 24px rgba(0,0,0,0.5) !important; }
+            .main-content { padding:1.25rem !important; padding-top:4.5rem !important; width:100% !important; overflow-y:auto !important; }
+            .page-header h1 { font-size:1.2rem !important; }
+            .page-header p  { font-size:0.8rem !important; }
+            .picker-card { padding:1rem !important; }
+            .filter-row  { grid-template-columns: 1fr !important; gap:0.75rem !important; }
+            .picker-grid { grid-template-columns: 1fr !important; gap:0.75rem !important; }
+            .select-input { font-size:0.85rem !important; padding:8px 10px !important; }
+            .review-header { flex-direction:column !important; align-items:flex-start !important; }
+            .badge-row { flex-wrap:wrap !important; }
+            .upload-card { padding:1rem !important; }
+            .upload-area { padding:1.25rem 0.75rem !important; }
+            .confirm-bar { flex-direction:column !important; align-items:flex-start !important; }
+            .confirm-bar .btn { width:100% !important; justify-content:center !important; }
+            .papers-grid { grid-template-columns: 1fr !important; }
+            .card-thumb-wrap { height:140px !important; }
+            .assign-row { flex-direction:column !important; }
+            .student-select { width:100% !important; }
+            .assign-row .btn { width:100% !important; justify-content:center !important; }
+            .reassign-row { flex-direction:column !important; }
+            .reassign-row .student-select, .reassign-row .btn { width:100% !important; justify-content:center !important; }
+            .how-card { padding:1rem !important; }
+            #lightboxImg { max-width:98vw !important; max-height:80vh !important; }
+        }
+
+        @media (max-width: 480px) {
+            .page-header h1 { font-size:1rem !important; }
+            .picker-card h2 { font-size:0.875rem !important; }
+            .badge { font-size:0.7rem !important; padding:3px 7px !important; }
+            .card-body { padding:0.75rem !important; }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="logo">
+        <svg viewBox="0 0 24 24"><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+        <span>Acadify</span>
+    </div>
+    <div class="nav-group">
+        <span class="nav-label">Management</span>
+        <a href="{{ url_for('teacher.dashboard') }}" class="nav-item">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/></svg>
+            <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('teacher.classes') }}" class="nav-item">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span>Classes</span>
+        </a>
+        <a href="{{ url_for('teacher.grading') }}" class="nav-item">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            <span>Grading</span>
+        </a>
+    </div>
+    <div class="nav-group">
+        <span class="nav-label">AI Tools</span>
+        <a href="{{ url_for('ocr.ai_grading') }}" class="nav-item active">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>AI Grading</span>
+        </a>
+    </div>
+    <div class="nav-group">
+        <span class="nav-label">Account</span>
+        <a href="{{ url_for('teacher.profile') }}" class="nav-item">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>Profile</span>
+        </a>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span>Logout</span>
+    </a>
+</nav>
+
+<main class="main-content">
+
+    <div class="page-header">
+        <h1>
+            <svg style="width:26px;height:26px;stroke:var(--accent-purple);fill:none;" viewBox="0 0 24 24">
+                <path stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            AI Grading
+        </h1>
+        <p>Select a class and test, upload paper images, then confirm each student's assignment.</p>
+    </div>
+
+    <!-- Picker card -->
+    <div class="picker-card">
+        <h2>Select Class &amp; Test</h2>
+
+        <!-- ── NEW: Semester + Year filter row ── -->
+        <div class="filter-row">
+            <div class="field-group">
+                <label>Semester</label>
+                <select class="select-input" id="semesterFilter" onchange="applyFilters()">
+                    <option value="">All Semesters</option>
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
+                    <option value="Summer">Summer</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>School Year</label>
+                <select class="select-input" id="yearFilter" onchange="applyFilters()">
+                    <option value="">All Years</option>
+                    <!-- populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Class + Test row -->
+        <div class="picker-grid">
+            <div class="field-group">
+                <label>Class</label>
+                <select class="select-input" id="classSelect" onchange="onClassChange()">
+                    <option value="">— Select class —</option>
+                    {% for cls in teacher_classes %}
+                    <option value="{{ cls.id }}"
+                            data-semester="{{ cls.semester }}"
+                            data-year="{{ cls.school_year }}"
+                            {% if preselected_class and cls.id == preselected_class.id %}selected{% endif %}>
+                        {{ cls.effective_subject_code }} — {{ cls.section or 'No section' }}
+                        ({{ cls.school_year }} {{ cls.semester }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label>Test / Activity</label>
+                <select class="select-input" id="testSelect" onchange="onTestChange()">
+                    <option value="">— Select class first —</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Filter active note + clear button -->
+        <div class="filter-active-note" id="filterNote">
+            <svg style="width:14px;height:14px;stroke:var(--accent-blue);fill:none;flex-shrink:0;" viewBox="0 0 24 24"><path stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+            <span id="filterNoteText">Showing filtered classes</span>
+            <button class="clear-filter-btn" onclick="clearFilters()">✕ Clear</button>
+        </div>
+
+        <!-- No classes match message -->
+        <div class="no-classes-msg" id="noClassesMsg">
+            No classes found for the selected semester and year. Try a different filter or select "All".
+        </div>
+    </div>
+
+    <!-- Review panel -->
+    <div id="reviewPanel">
+        <div class="review-header">
+            <div>
+                <div class="review-title" id="reviewTitle">—</div>
+                <div class="review-sub"  id="reviewSub">—</div>
+            </div>
+            <div class="badge-row">
+                <span class="badge badge-pending"  id="badgePending">⏳ 0 pending</span>
+                <span class="badge badge-assigned" id="badgeAssigned">✅ 0 assigned</span>
+                <span class="badge badge-error"    id="badgeError" style="display:none">❌ 0 error</span>
+            </div>
+        </div>
+
+        <div class="upload-card">
+            <div class="upload-area" id="uploadArea"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="handleDrop(event)">
+                <input type="file" id="fileInput" multiple accept=".png,.jpg,.jpeg"
+                       style="display:none" onchange="handleFiles(this.files)">
+                <svg style="width:36px;height:36px;stroke:var(--text-dim);fill:none;margin-bottom:8px;" viewBox="0 0 24 24">
+                    <path stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="upload-title">Drag &amp; drop paper images here</p>
+                <p>JPG or PNG · multiple files allowed</p>
+                <button class="btn btn-outline" style="margin-top:10px;"
+                        onclick="document.getElementById('fileInput').click()">
+                    Choose Files
+                </button>
+            </div>
+            <div id="uploadProgress" style="display:none;margin-top:0.75rem;">
+                <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+                <p class="progress-text" id="progressText">Processing…</p>
+            </div>
+        </div>
+
+        <div class="confirm-bar" id="confirmBar">
+            <span>Confirm all auto-suggested papers at once</span>
+            <button class="btn btn-success" id="confirmAllBtn" onclick="confirmAll()">
+                ✅ Confirm All Suggestions
+            </button>
+        </div>
+
+        <div class="papers-grid" id="papersGrid">
+            <div class="empty-state" id="emptyState">
+                No papers uploaded yet. Drag &amp; drop images above.
+            </div>
+        </div>
+    </div>
+
+    <div class="how-card" id="howCard">
+        <h2>How It Works</h2>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-text">
+                <strong>Filter by semester and year (optional)</strong>
+                <span>Use the filters above to narrow the class list to the current semester so it's easier to find the right class.</span>
+            </div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text">
+                <strong>Select a class and test</strong>
+                <span>This scopes all uploads to the correct students and grade records.</span>
+            </div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text">
+                <strong>Drag &amp; drop the paper images</strong>
+                <span>Upload the whole batch at once — JPG or PNG, as many as needed.</span>
+            </div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-text">
+                <strong>The AI reads each paper</strong>
+                <span>YOLO detects name, score, and label regions. OCR reads the text. Fuzzy matching compares the name against your enrolled students.</span>
+            </div></div>
+            <div class="step"><div class="step-num">5</div><div class="step-text">
+                <strong>Confirm or correct each assignment</strong>
+                <span>Green = high confidence. Yellow = uncertain. Red = unreadable (manual pick required).</span>
+            </div></div>
+            <div class="step"><div class="step-num">6</div><div class="step-text">
+                <strong>Grades are written automatically</strong>
+                <span>Once confirmed, the OCR score is saved and the term grade recalculates.</span>
+            </div></div>
+        </div>
+    </div>
+
+</main>
+
+<div id="lightbox" onclick="if(event.target===this)closeLb()">
+    <button class="lb-close" onclick="closeLb()">✕</button>
+    <img id="lightboxImg" src="" alt="Paper">
+</div>
+
+<script>
+    // ── All classes data from backend ──────────────────────────────────────────
+    const CLASS_TESTS = {
+        {% for cls in teacher_classes %}
+        "{{ cls.id }}": [
+            {% for test in cls.tests %}
+            {id: {{ test.id }}, title: {{ test.title | tojson }}}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    // Current school year / semester from config (used for default filter)
+    const CURRENT_YEAR     = {{ (current_school_year or '') | tojson }};
+    const CURRENT_SEMESTER = {{ (current_semester or '') | tojson }};
+
+    let CURRENT_TEST_ID  = null;
+    let CURRENT_STUDENTS = [];
+
+    // ── Build year dropdown from actual class data ─────────────────────────────
+    function buildYearDropdown() {
+        const allOptions = document.querySelectorAll('#classSelect option[data-year]');
+        const years = [...new Set([...allOptions].map(o => o.dataset.year))].sort().reverse();
+        const sel   = document.getElementById('yearFilter');
+
+        years.forEach(y => {
+            const o = document.createElement('option');
+            o.value = y;
+            o.textContent = y;
+            if (y === CURRENT_YEAR) o.selected = true;
+            sel.appendChild(o);
+        });
+    }
+
+    // ── Apply semester + year filter to class dropdown ─────────────────────────
+    function applyFilters() {
+        const sem  = document.getElementById('semesterFilter').value;
+        const year = document.getElementById('yearFilter').value;
+        const classSelect = document.getElementById('classSelect');
+        const options     = classSelect.querySelectorAll('option[data-semester]');
+
+        let visibleCount = 0;
+
+        options.forEach(opt => {
+            const semMatch  = !sem  || opt.dataset.semester === sem;
+            const yearMatch = !year || opt.dataset.year     === year;
+            const show      = semMatch && yearMatch;
+            opt.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        // If currently selected class was hidden, reset it
+        const selected = classSelect.value;
+        if (selected) {
+            const selectedOpt = classSelect.querySelector(`option[value="${selected}"]`);
+            if (selectedOpt && selectedOpt.style.display === 'none') {
+                classSelect.value = '';
+                populateTests('', null);
+                clearReview();
+            }
+        }
+
+        // Show/hide the "no classes" message
+        document.getElementById('noClassesMsg').style.display =
+            visibleCount === 0 && (sem || year) ? 'block' : 'none';
+
+        // Show/hide the filter note
+        const filterNote = document.getElementById('filterNote');
+        if (sem || year) {
+            filterNote.classList.add('visible');
+            const parts = [];
+            if (sem)  parts.push(sem);
+            if (year) parts.push(year);
+            document.getElementById('filterNoteText').textContent =
+                `Showing ${visibleCount} class${visibleCount !== 1 ? 'es' : ''} for ${parts.join(', ')}`;
+        } else {
+            filterNote.classList.remove('visible');
+        }
+    }
+
+    function clearFilters() {
+        document.getElementById('semesterFilter').value = '';
+        document.getElementById('yearFilter').value     = '';
+        applyFilters();
+    }
+
+    // ── Cascade: class → test ──────────────────────────────────────────────────
+    function onClassChange() {
+        const classId = document.getElementById('classSelect').value;
+        populateTests(classId, null);
+        clearReview();
+    }
+
+    function populateTests(classId, preselectId) {
+        const sel = document.getElementById('testSelect');
+        sel.innerHTML = '<option value="">— Select test —</option>';
+        CURRENT_TEST_ID = null;
+        if (!classId || !CLASS_TESTS[classId]) return;
+        CLASS_TESTS[classId].forEach(t => {
+            const o = document.createElement('option');
+            o.value = t.id;
+            o.textContent = t.title;
+            if (preselectId && t.id == preselectId) o.selected = true;
+            sel.appendChild(o);
+        });
+        if (preselectId) loadTest(preselectId);
+    }
+
+    function onTestChange() {
+        const testId = document.getElementById('testSelect').value;
+        if (testId) loadTest(parseInt(testId));
+        else clearReview();
+    }
+
+    // ── Load existing papers ───────────────────────────────────────────────────
+    function loadTest(testId) {
+        CURRENT_TEST_ID = testId;
+        showReviewPanel();
+
+        fetch(`/ocr/test-papers/${testId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            document.getElementById('reviewTitle').textContent = data.test_title;
+            document.getElementById('reviewSub').textContent   = data.class_name;
+            CURRENT_STUDENTS = data.students;
+            renderCards(data.papers);
+            updateBadges(data.papers);
+
+            {% if initial_papers %}
+            if (testId === {{ preselected_test.id if preselected_test else 'null' }}) {
+                const initial = {{ (initial_papers or []) | tojson }};
+                if (initial.length > 0 && data.papers.length === 0) {
+                    renderCards(initial);
+                    updateBadges(initial);
+                }
+            }
+            {% endif %}
+        })
+        .catch(console.error);
+    }
+
+    function showReviewPanel() {
+        document.getElementById('reviewPanel').classList.add('visible');
+        document.getElementById('howCard').style.display = 'none';
+    }
+
+    function clearReview() {
+        CURRENT_TEST_ID  = null;
+        CURRENT_STUDENTS = [];
+        document.getElementById('reviewPanel').classList.remove('visible');
+        document.getElementById('howCard').style.display = '';
+        document.getElementById('papersGrid').innerHTML =
+            '<div class="empty-state" id="emptyState">No papers uploaded yet. Drag &amp; drop images above.</div>';
+        updateBadgesFromDOM();
+    }
+
+    // ── Upload ─────────────────────────────────────────────────────────────────
+    function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById('uploadArea').classList.remove('drag-over');
+        handleFiles(e.dataTransfer.files);
+    }
+
+    function handleFiles(files) {
+        if (!CURRENT_TEST_ID) { alert('Please select a test first.'); return; }
+        if (!files || files.length === 0) return;
+
+        const fd = new FormData();
+        fd.append('test_id', CURRENT_TEST_ID);
+        for (const f of files) fd.append('files[]', f);
+
+        const prog = document.getElementById('uploadProgress');
+        const fill = document.getElementById('progressFill');
+        const txt  = document.getElementById('progressText');
+        prog.style.display = 'block';
+        fill.style.width   = '10%';
+        txt.textContent    = `Uploading ${files.length} file(s) and running pipeline…`;
+
+        fetch('/ocr/upload-papers', {method:'POST', body:fd})
+        .then(r => {
+            if (!r.ok) {
+                if (r.status === 413) throw new Error('Files too large. Try uploading fewer images at once.');
+                throw new Error(`Server error ${r.status}`);
+            }
+            return r.json();
+        })
+        .then(data => {
+            fill.style.width = '100%';
+            if (!data.success) { txt.textContent = '❌ ' + (data.error || 'Upload failed'); return; }
+            const skipped = data.skipped_duplicates || [];
+            txt.textContent = skipped.length > 0
+                ? `✅ ${data.total} processed. ⚠️ ${skipped.length} duplicate(s) skipped: ${skipped.join(', ')}`
+                : `✅ ${data.total} paper(s) processed.`;
+            renderCards(data.review_items);
+            updateBadges(data.review_items);
+            setTimeout(() => { prog.style.display = 'none'; }, 4000);
+        })
+        .catch(err => { txt.textContent = '❌ ' + err.message; fill.style.width='0%'; });
+    }
+
+    // ── Render cards ───────────────────────────────────────────────────────────
+    function renderCards(items) {
+        const grid = document.getElementById('papersGrid');
+        const es   = document.getElementById('emptyState');
+        if (es) es.remove();
+        items.forEach(item => {
+            const existing = document.getElementById(`card-${item.image_id}`);
+            const html = buildCard(item);
+            if (existing) existing.outerHTML = html;
+            else grid.insertAdjacentHTML('beforeend', html);
+        });
+        if (!document.getElementById('emptyState') && grid.children.length === 0) {
+            grid.innerHTML = '<div class="empty-state" id="emptyState">No papers uploaded yet.</div>';
+        }
+    }
+
+    function buildCard(item) {
+        const tier   = item.confidence_tier || 'none';
+        const status = item.status;
+        const confBadge = item.confidence != null
+            ? `<span class="conf-badge conf-${tier}">${Math.round(item.confidence)}% match</span>` : '';
+        let suggestionHtml = '';
+        if (item.suggested_student_id && (tier==='high'||tier==='medium')) {
+            const icon = tier==='high' ? '🟢 Suggested:' : '🟡 Possible match:';
+            suggestionHtml = `<p class="suggestion-text conf-${tier}">${icon} <strong>${esc(item.suggested_student_name||'')}</strong></p>`;
+        } else if (tier==='low'||tier==='none') {
+            suggestionHtml = `<p style="font-size:0.78rem;color:var(--error-red);margin-bottom:4px;">🔴 No match found — assign manually</p>`;
+        }
+        const errHtml = item.error_message
+            ? `<div class="error-box"><strong>Error:</strong> ${esc(item.error_message)}<br>
+               <button class="btn btn-outline btn-sm" style="margin-top:5px;" onclick="retryCard(${item.image_id})">🔄 Retry</button></div>` : '';
+        const optionsHtml = buildOptions(item.suggested_student_id);
+        const assignHtml = status === 'assigned'
+            ? `<div id="assign-${item.image_id}">
+                <span class="assigned-name">👤 ${esc(item.suggested_student_name||'Assigned')}</span>
+                <button class="btn btn-outline btn-sm" onclick="showReassign(${item.image_id})">✏️ Reassign</button>
+                <div class="reassign-row" id="reassign-${item.image_id}" style="display:none;">
+                    <select class="student-select" id="resel-${item.image_id}">${buildOptions(null)}</select>
+                    <button class="btn btn-ai btn-sm" onclick="confirmCard(${item.image_id},true)">Confirm</button>
+                    <button class="btn btn-outline btn-sm" onclick="hideReassign(${item.image_id})">Cancel</button>
+                </div></div>`
+            : `<div id="assign-${item.image_id}">
+                ${suggestionHtml}
+                <div class="assign-row">
+                    <select class="student-select" id="sel-${item.image_id}">${optionsHtml}</select>
+                    <button class="btn btn-ai btn-sm" onclick="confirmCard(${item.image_id})">Confirm</button>
+                </div></div>`;
+        return `
+        <div class="paper-card conf-${tier}" id="card-${item.image_id}" data-image-id="${item.image_id}" data-status="${status}">
+            <div class="card-thumb-wrap" onclick="openLb('${item.image_url}')">
+                <img src="${item.image_url}" class="card-thumb" onerror="this.style.display='none'" alt="">
+                <div class="thumb-overlay">🔍 Full size</div>
+            </div>
+            <div class="card-body">
+                <p class="card-filename" title="${esc(item.original_filename)}">📄 ${esc(item.original_filename)}</p>
+                <button class="delete-btn"
+                        onclick="deleteCard(${item.image_id}, '${esc(item.original_filename)}')"
+                        style="float:right;margin-top:-28px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;transition:color 0.15s;"
+                        onmouseover="if(this.closest('.paper-card').dataset.status!=='assigned')this.style.color='var(--error-red)'"
+                        onmouseout="this.style.color='var(--text-dim)'"
+                        title="${status==='assigned'?'Cannot delete — grade is linked to this paper':'Delete this paper image'}">🗑</button>
+                <div class="delete-blocked-msg">⚠️ This paper is already assigned to a student and linked to a grade. You can only delete papers if the status is "pending", "uncertain", or "error".</div>
+                <div class="ocr-row"><span class="ocr-label">Name (OCR)</span><span class="ocr-value ${!item.ocr_name?'ocr-null':''}">${esc(item.ocr_name||'— unreadable —')}</span></div>
+                <div class="ocr-row"><span class="ocr-label">Score (OCR)</span><span class="ocr-value">${esc(item.ocr_score||'—')}</span></div>
+                <div class="status-row">
+                    <span class="status-badge status-${status}">${esc(item.display_status||status)}</span>
+                    ${confBadge}
+                </div>
+                ${errHtml}
+                ${assignHtml}
+            </div>
+        </div>`;
+    }
+
+    function buildOptions(preselectId) {
+        let html = '<option value="">— Select student —</option>';
+        CURRENT_STUDENTS.forEach(s => {
+            const sel = (preselectId && s.id == preselectId) ? 'selected' : '';
+            html += `<option value="${s.id}" ${sel}>${esc(s.display)}</option>`;
+        });
+        return html;
+    }
+
+    function confirmCard(imageId, isReassign=false) {
+        const selId = isReassign ? `resel-${imageId}` : `sel-${imageId}`;
+        const sel   = document.getElementById(selId);
+        if (!sel || !sel.value) { alert('Please select a student first.'); return; }
+        const studentId   = parseInt(sel.value);
+        const studentName = sel.options[sel.selectedIndex].text;
+        const btn = sel.nextElementSibling;
+        if (btn) btn.disabled = true;
+        fetch('/ocr/confirm-assignment', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({image_id: imageId, student_id: studentId})
+        })
+        .then(r=>r.json())
+        .then(data => {
+            if (!data.success) { alert('Error: '+(data.error||'Failed')); if(btn) btn.disabled=false; return; }
+            markAssigned(imageId, data.student_name||studentName);
+            updateBadgesFromDOM();
+        })
+        .catch(err => { alert('Network error: '+err.message); if(btn) btn.disabled=false; });
+    }
+
+    function markAssigned(imageId, studentName) {
+        const card = document.getElementById(`card-${imageId}`);
+        if (!card) return;
+        card.dataset.status = 'assigned';
+        card.style.borderColor = 'rgba(35,134,54,0.7)';
+        const badge = card.querySelector('.status-badge');
+        if (badge) { badge.className='status-badge status-assigned'; badge.textContent='✅ Assigned'; }
+        const assignDiv = document.getElementById(`assign-${imageId}`);
+        if (assignDiv) {
+            assignDiv.innerHTML = `
+                <span class="assigned-name">👤 ${esc(studentName)}</span>
+                <button class="btn btn-outline btn-sm" onclick="showReassign(${imageId})">✏️ Reassign</button>
+                <div class="reassign-row" id="reassign-${imageId}" style="display:none;">
+                    <select class="student-select" id="resel-${imageId}">${buildOptions(null)}</select>
+                    <button class="btn btn-ai btn-sm" onclick="confirmCard(${imageId},true)">Confirm</button>
+                    <button class="btn btn-outline btn-sm" onclick="hideReassign(${imageId})">Cancel</button>
+                </div>`;
+        }
+    }
+
+    function confirmAll() {
+        const pending = document.querySelectorAll('.paper-card[data-status="pending"], .paper-card[data-status="uncertain"]');
+        const assignments = [];
+        pending.forEach(card => {
+            const imgId = parseInt(card.dataset.imageId);
+            const sel   = document.getElementById(`sel-${imgId}`);
+            if (sel && sel.value) assignments.push({image_id:imgId, student_id:parseInt(sel.value)});
+        });
+        if (!assignments.length) { alert('No papers have a student selected yet.'); return; }
+        const btn = document.getElementById('confirmAllBtn');
+        btn.disabled = true; btn.textContent = 'Confirming…';
+        fetch('/ocr/confirm-batch', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({test_id: CURRENT_TEST_ID, assignments})
+        })
+        .then(r=>r.json())
+        .then(data => {
+            btn.disabled = false; btn.textContent = '✅ Confirm All Suggestions';
+            if (!data.success) { alert('Error: '+data.error); return; }
+            assignments.forEach(a => {
+                const sel  = document.getElementById(`sel-${a.image_id}`);
+                const name = sel ? sel.options[sel.selectedIndex].text : 'Student';
+                markAssigned(a.image_id, name);
+            });
+            if (data.errors && data.errors.length) alert(`⚠️ ${data.skipped} skipped:\n`+data.errors.join('\n'));
+            updateBadgesFromDOM();
+        })
+        .catch(err => { btn.disabled=false; btn.textContent='✅ Confirm All Suggestions'; alert(err.message); });
+    }
+
+    function retryCard(imageId) {
+        const card = document.getElementById(`card-${imageId}`);
+        if (card) card.style.opacity = '0.5';
+        fetch(`/ocr/retry/${imageId}`, {method:'POST'})
+        .then(r=>r.json())
+        .then(data => {
+            if (card) card.style.opacity = '1';
+            if (data.success) loadTest(CURRENT_TEST_ID);
+            else alert('Retry failed: ' + data.error);
+        })
+        .catch(err => { if(card) card.style.opacity='1'; alert(err.message); });
+    }
+
+    function showReassign(id) { const r=document.getElementById(`reassign-${id}`); if(r) r.style.display='flex'; }
+    function hideReassign(id) { const r=document.getElementById(`reassign-${id}`); if(r) r.style.display='none'; }
+
+    function updateBadges(items) {
+        _setBadges(
+            items.filter(i=>i.status==='pending'||i.status==='uncertain').length,
+            items.filter(i=>i.status==='assigned').length,
+            items.filter(i=>i.status==='error').length
+        );
+    }
+    function updateBadgesFromDOM() {
+        _setBadges(
+            document.querySelectorAll('.paper-card[data-status="pending"],.paper-card[data-status="uncertain"]').length,
+            document.querySelectorAll('.paper-card[data-status="assigned"]').length,
+            document.querySelectorAll('.paper-card[data-status="error"]').length
+        );
+    }
+    function _setBadges(pending, assigned, errors) {
+        document.getElementById('badgePending').textContent  = `⏳ ${pending} pending`;
+        document.getElementById('badgeAssigned').textContent = `✅ ${assigned} assigned`;
+        const eb = document.getElementById('badgeError');
+        eb.textContent = `❌ ${errors} error`; eb.style.display = errors > 0 ? '' : 'none';
+        const bar = document.getElementById('confirmBar');
+        if (pending > 0) bar.classList.add('visible'); else bar.classList.remove('visible');
+    }
+
+    function openLb(url) { document.getElementById('lightboxImg').src=url; document.getElementById('lightbox').style.display='flex'; document.body.style.overflow='hidden'; }
+    function closeLb()   { document.getElementById('lightbox').style.display='none'; document.getElementById('lightboxImg').src=''; document.body.style.overflow=''; }
+    document.addEventListener('keydown', e => { if (e.key==='Escape') closeLb(); });
+
+    function esc(s) {
+        if (!s) return '';
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function deleteCard(imageId, filename) {
+        const card = document.getElementById(`card-${imageId}`);
+        if (card && card.dataset.status === 'assigned') {
+            const msg = card.querySelector('.delete-blocked-msg');
+            if (msg) { msg.classList.add('visible'); setTimeout(() => msg.classList.remove('visible'), 6000); }
+            return;
+        }
+        if (!confirm(`Delete "${filename}"?\n\nThis will remove the image and its record permanently. This cannot be undone.`)) return;
+        fetch(`/ocr/paper-image/${imageId}/delete`, {method:'POST'})
+        .then(r=>r.json())
+        .then(data => {
+            if (!data.success) {
+                const msg = card ? card.querySelector('.delete-blocked-msg') : null;
+                if (msg) { msg.classList.add('visible'); setTimeout(() => msg.classList.remove('visible'), 6000); }
+                else alert('Cannot delete: ' + data.error);
+                return;
+            }
+            if (card) card.remove();
+            updateBadgesFromDOM();
+            const grid = document.getElementById('papersGrid');
+            if (grid && grid.children.length === 0) grid.innerHTML = '<div class="empty-state" id="emptyState">No papers uploaded yet. Drag &amp; drop images above.</div>';
+        })
+        .catch(err => alert('Network error: ' + err.message));
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        // Build year dropdown from class data
+        buildYearDropdown();
+
+        // Default filter to current semester + year
+        document.getElementById('semesterFilter').value = CURRENT_SEMESTER;
+        document.getElementById('yearFilter').value     = CURRENT_YEAR;
+        applyFilters();
+
+        {% if preselected_test %}
+        CURRENT_TEST_ID  = {{ preselected_test.id }};
+        CURRENT_STUDENTS = {{ (initial_students or []) | tojson }};
+        document.getElementById('reviewTitle').textContent = {{ (preselected_test.title or '') | tojson }};
+        document.getElementById('reviewSub').textContent   = {{ (preselected_class.get_display_name() if preselected_class else '') | tojson }};
+        showReviewPanel();
+        const initial = {{ (initial_papers or []) | tojson }};
+        if (initial.length > 0) { renderCards(initial); updateBadges(initial); }
+
+        // Sync class dropdown (may be hidden by filter — temporarily show it)
+        const classEl = document.getElementById('classSelect');
+        const preselectOpt = classEl.querySelector('option[value="{{ preselected_class.id }}"]');
+        if (preselectOpt) preselectOpt.style.display = '';
+        classEl.value = '{{ preselected_class.id }}';
+
+        // Sync test dropdown
+        const testSel = document.getElementById('testSelect');
+        testSel.innerHTML = '';
+        if (CLASS_TESTS['{{ preselected_class.id }}']) {
+            CLASS_TESTS['{{ preselected_class.id }}'].forEach(t => {
+                const o = document.createElement('option');
+                o.value = t.id; o.textContent = t.title;
+                if (t.id === CURRENT_TEST_ID) o.selected = true;
+                testSel.appendChild(o);
+            });
+        }
+        {% endif %}
+    });
+</script>
+<script src="{{ url_for('static', filename='responsive.js') }}"></script>
+</body>
+</html>

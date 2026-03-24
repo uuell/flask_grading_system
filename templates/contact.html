@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify — Contact</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card: #111111;
+            --card2: #161b22;
+            --border: #1f2937;
+            --blue: #0066ff;
+            --blue-dim: rgba(0,102,255,0.1);
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --dim: #6b7280;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── Nav ── */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.75rem 4rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; }
+
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+        .nav-btn {
+            background: var(--blue);
+            color: #fff;
+            padding: 0.55rem 1.4rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .nav-btn:hover { opacity: 0.85; }
+
+        /* ── Page layout ── */
+        .page-hero {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 4.5rem 2rem 2.5rem;
+            text-align: center;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            background: var(--blue-dim);
+            color: var(--blue);
+            border: 1px solid rgba(0,102,255,0.2);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 999px;
+            margin-bottom: 1.25rem;
+        }
+
+        .page-hero h1 {
+            font-size: clamp(1.75rem, 4vw, 2.75rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .page-hero p {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        /* ── Main grid ── */
+        .contact-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem 5rem;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        /* ── Info cards ── */
+        .info-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-card {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            transition: border-color 0.2s;
+        }
+
+        .info-card:hover { border-color: rgba(0,102,255,0.3); }
+
+        .info-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--blue-dim);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .info-icon svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 2; }
+
+        .info-text h3 { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.3rem; }
+
+        .info-text p {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .info-text a {
+            color: var(--blue);
+            text-decoration: none;
+            font-size: 0.82rem;
+        }
+
+        .info-text a:hover { text-decoration: underline; }
+
+        /* ── Contact form ── */
+        .form-card {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .form-card h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 7px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            resize: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+        }
+
+        .form-group textarea { min-height: 130px; }
+
+        .form-group select option { background: #161b22; }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 7px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 0.25rem;
+        }
+
+        .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .submit-btn:active { transform: none; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .submit-btn svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2; }
+
+        /* ── Flash messages ── */
+        .alert {
+            padding: 12px 14px;
+            border-radius: 7px;
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: var(--success);
+        }
+
+        .alert-danger, .alert-error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: var(--error);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem 4rem;
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .footer-logo svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; }
+
+        .footer-nav { display: flex; gap: 1.5rem; list-style: none; }
+
+        .footer-nav a {
+            color: var(--dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-nav a:hover { color: var(--text); }
+
+        .footer-copy {
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--dim);
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        /* ── Tablet ── */
+        @media (max-width: 1024px) {
+            .navbar { padding: 1.5rem 2.5rem; }
+            .contact-wrap { gap: 2rem; }
+            .page-hero { padding: 3.5rem 2rem 2rem; }
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 768px) {
+            .navbar { padding: 1rem 1.25rem; }
+            .nav-links { display: none; }
+            .nav-btn { padding: 0.45rem 1rem; font-size: 0.8rem; }
+
+            .page-hero {
+                padding: 2.75rem 1.25rem 1.75rem;
+            }
+            .page-hero h1 { font-size: 1.75rem; }
+            .page-hero p  { font-size: 0.9rem; }
+
+            /* Stack info + form */
+            .contact-wrap {
+                grid-template-columns: 1fr;
+                padding: 0 1.25rem 3.5rem;
+                gap: 1.25rem;
+            }
+
+            /* Info cards — tighten */
+            .info-card { padding: 1rem; }
+            .info-icon { width: 34px; height: 34px; flex-shrink: 0; }
+            .info-text h3 { font-size: 0.82rem; }
+            .info-text p, .info-text a { font-size: 0.78rem; }
+
+            /* Form */
+            .form-card { padding: 1.25rem; }
+            .form-card h2 { font-size: 1rem; margin-bottom: 1.25rem; }
+            .form-row { grid-template-columns: 1fr; gap: 0; }
+
+            /* Submit button */
+            .submit-btn { font-size: 0.875rem; padding: 11px; }
+
+            /* Footer */
+            .footer { padding: 1.5rem 1.25rem; }
+            .footer-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .footer-nav { flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+        }
+
+        /* ── Small phones ── */
+        @media (max-width: 480px) {
+            .page-hero h1 { font-size: 1.5rem; }
+            .eyebrow { font-size: 0.68rem; }
+            .contact-wrap { padding: 0 1rem 3rem; }
+            .form-group input,
+            .form-group select,
+            .form-group textarea { font-size: 0.875rem; }
+            /* Stack alert text */
+            .alert { font-size: 0.82rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            Acadify
+        </a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('privacy') }}">Privacy</a></li>
+            <li><a href="{{ url_for('contact') }}" class="active">Contact</a></li>
+        </ul>
+        <a href="{{ url_for('auth.student_login') }}" class="nav-btn">Sign In</a>
+    </nav>
+
+    <div class="page-hero">
+        <span class="eyebrow">Get in Touch</span>
+        <h1>Contact Us</h1>
+        <p>Have a question, a problem, or feedback about Acadify? Send us a message and the right person will get back to you.</p>
+    </div>
+
+    <div class="contact-wrap">
+
+        <!-- Info column -->
+        <div class="info-col">
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </div>
+                <div class="info-text">
+                    <h3>Email</h3>
+                    <a href="/cdn-cgi/l/email-protection#e0928587899394928192a081838184898699ce858495"><span class="__cf_email__" data-cfemail="fe8c9b99978d8a8c9f8cbe9f9d9f9a979887d09b9a8b">[email&#160;protected]</span></a>
+                    <p>For general inquiries and account issues.</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24"><path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </div>
+                <div class="info-text">
+                    <h3>IT Support</h3>
+                    <a href="/cdn-cgi/l/email-protection#eb989e9b9b84999fab8a888a8f828d92c58e8f9e"><span class="__cf_email__" data-cfemail="c7b4b2b7b7a8b5b387a6a4a6a3aea1bee9a2a3b2">[email&#160;protected]</span></a>
+                    <p>For technical problems, login issues, or system errors.</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                </div>
+                <div class="info-text">
+                    <h3>Phone</h3>
+                    <p>+63 123 456 7890</p>
+                    <p>Mon – Fri, 8:00 AM – 5:00 PM</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-icon">
+                    <svg viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div class="info-text">
+                    <h3>Location</h3>
+                    <p>University of Rizal System — Morong</p>
+                    <p>Sumulong St, Morong, Rizal, Philippines</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form column -->
+        <div class="form-card">
+            <h2>Send a Message</h2>
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('contact') }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name *</label>
+                        <input type="text" name="first_name" placeholder="Juan" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name *</label>
+                        <input type="text" name="last_name" placeholder="Dela Cruz" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" name="email" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Role</label>
+                    <select name="role">
+                        <option value="">— Select your role —</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher / Faculty</option>
+                        <option value="admin">Administrator</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <input type="text" name="subject" placeholder="e.g. Cannot log in to my account" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Message *</label>
+                    <textarea name="message" placeholder="Describe your question or issue in detail…" required></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <svg viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Send Message
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <a href="{{ url_for('index') }}" class="footer-logo">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                Acadify
+            </a>
+            <ul class="footer-nav">
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>

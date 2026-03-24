@@ -740,7 +740,429 @@
             outline: none;
             border-color: var(--accent-purple);
         }
+
+                /*
+        ============================================================
+        GRADING TOOLBAR FIX
+        Add these rules inside the <style> block in grading.html,
+        right before the existing @media queries.
+        ============================================================
+        */
+
+        /* ── Base toolbar layout ── */
+        .grading-toolbar {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;       /* stack selector row + action row */
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Selector row: wraps naturally when tight ── */
+        .class-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        /* ── Each selector group ── */
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;                 /* allow shrinking in flex */
+        }
+
+        /* ── Override the too-wide default on select-input ── */
+        .select-input {
+            min-width: 0 !important;     /* remove the 200px floor */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* ── Give specific groups sensible basis widths ── */
+        .selector-group:has(#semesterSelect) { flex: 1 1 130px; }
+        .selector-group:has(#yearSelect)     { flex: 1 1 120px; }
+        .jump-year-group                     { flex: 0 0 auto;  }
+        .class-group                         { flex: 2 1 200px; }
+
+        /* ── Jump-to-year: input + button sit side by side ── */
+        .jump-year-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .jump-year-input {
+            width: 110px;
+            min-width: 0;
+            box-sizing: border-box;
+            background: var(--sidebar-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .jump-year-input:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .jump-year-btn {
+            padding: 8px 12px !important;
+            height: 36px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ── Action group ── */
+        .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        /* ── Mobile (≤768px) ── */
+        @media (max-width: 768px) {
+            .grading-toolbar {
+                padding: 0.75rem 1rem;
+                padding-top: 4.5rem;      /* hamburger clearance */
+            }
+
+            .class-selector {
+                gap: 0.5rem;
+            }
+
+            /* On mobile every selector fills its row */
+            .selector-group:has(#semesterSelect),
+            .selector-group:has(#yearSelect) {
+                flex: 1 1 120px;
+            }
+
+            .class-group {
+                flex: 1 1 100%;           /* Class select gets its own full row */
+            }
+
+            .jump-year-group {
+                flex: 1 1 auto;
+            }
+
+            .jump-year-input {
+                flex: 1 1 auto;
+                width: auto;
+            }
+
+            .action-group {
+                width: 100%;
+            }
+
+            .action-group .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+                font-size: 0.8rem;
+                padding: 8px 10px;
+                min-width: 0;
+            }
+
+            .action-group .btn span { display: none; }  /* hide text, keep icon on very small */
+        }
+
+        @media (max-width: 480px) {
+            .grading-toolbar {
+                padding-top: 4rem;
+            }
+
+            /* Two buttons per row on tiny screens */
+            .action-group .btn {
+                font-size: 0.75rem;
+                padding: 7px 8px;
+                gap: 4px;
+            }
+
+            .action-group .btn .icon {
+                width: 14px;
+                height: 14px;
+            }
+        }
+
+        /* ============================================================
+        GRADING PAGE (teacher/grading.html) — RESPONSIVE CSS
+        Paste this inside the <style> block in grading.html
+        ============================================================ */
+
+        @media (max-width: 1100px) {
+            /* Toolbar wraps */
+            .grading-toolbar {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+                padding: 1rem 1.25rem !important;
+            }
+
+            .class-selector {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+
+            .action-group {
+                width: 100% !important;
+                justify-content: flex-end !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .select-input {
+                min-width: 140px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Body */
+            body {
+                flex-direction: column;
+                overflow-x: hidden;
+                /* NOTE: grading page uses overflow:hidden on body for the spreadsheet.
+                On mobile we allow vertical scroll on main-content instead. */
+                overflow: hidden !important;
+            }
+
+            /* Sidebar drawer */
+            .sidebar,
+            nav.sidebar {
+                position: fixed !important;
+                left: -280px !important;
+                top: 0 !important;
+                width: 260px !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                transition: left 0.25s ease !important;
+                overflow-y: auto !important;
+            }
+
+            .sidebar.sidebar-open,
+            nav.sidebar.sidebar-open {
+                left: 0 !important;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.5) !important;
+            }
+
+            /* Main content — allow vertical scroll on mobile */
+            .main-content {
+                height: auto !important;
+                overflow: auto !important;
+                flex: 1 !important;
+                width: 100% !important;
+            }
+
+            /* Toolbar */
+            .grading-toolbar {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.75rem !important;
+                padding: 0.75rem 1rem !important;
+                padding-top: 4.5rem !important; /* hamburger clearance */
+            }
+
+            .class-selector {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 0.5rem !important;
+            }
+
+            /* Each selector group becomes full width */
+            .selector-group {
+                width: 100% !important;
+            }
+
+            .select-input {
+                width: 100% !important;
+                min-width: unset !important;
+                font-size: 0.85rem !important;
+            }
+
+            /* Jump-to-year row */
+            .selector-group[style*="flex-direction: row"] {
+                flex-direction: row !important;
+                align-items: flex-end !important;
+                gap: 0.4rem !important;
+            }
+
+            .selector-group[style*="flex-direction: row"] input[type="text"] {
+                flex: 1 !important;
+                width: auto !important;
+                min-width: 0 !important;
+            }
+
+            /* Action group */
+            .action-group {
+                width: 100% !important;
+                justify-content: flex-start !important;
+                flex-wrap: wrap !important;
+                gap: 0.4rem !important;
+            }
+
+            .action-group .btn {
+                flex: 1 !important;
+                min-width: 120px !important;
+                justify-content: center !important;
+                font-size: 0.8rem !important;
+                padding: 8px 10px !important;
+            }
+
+            /* Spreadsheet scrolls horizontally — this is expected */
+            .spreadsheet-container {
+                flex: 1 !important;
+                overflow: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            /* Component modal — near fullscreen */
+            .component-modal {
+                width: 96vw !important;
+                max-width: 96vw !important;
+                max-height: 92vh !important;
+            }
+
+            .component-modal .modal-header {
+                padding: 1rem 1.25rem !important;
+            }
+
+            .component-modal .modal-header h2 {
+                font-size: 1.1rem !important;
+            }
+
+            .component-modal .modal-body {
+                padding: 1rem 1.25rem !important;
+            }
+
+            .component-modal .modal-footer {
+                padding: 1rem 1.25rem !important;
+                flex-direction: column-reverse !important;
+                gap: 0.5rem !important;
+                align-items: stretch !important;
+            }
+
+            .modal-actions {
+                flex-direction: row !important;
+                gap: 0.5rem !important;
+                width: 100% !important;
+            }
+
+            .modal-actions .btn {
+                flex: 1 !important;
+                justify-content: center !important;
+            }
+
+            .final-grade-display {
+                text-align: center !important;
+            }
+
+            /* Component items */
+            .component-item {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            .item-input-group {
+                flex-wrap: wrap !important;
+                gap: 0.4rem !important;
+            }
+
+            .item-name-input {
+                min-width: 120px !important;
+            }
+
+            .item-score-group {
+                flex-shrink: 0 !important;
+            }
+
+            /* AI modal */
+            .modal-overlay .modal {
+                width: 95vw !important;
+                max-width: 95vw !important;
+                padding: 1.25rem !important;
+            }
+
+            .modal-footer-ai {
+                flex-direction: column-reverse !important;
+                gap: 0.5rem !important;
+            }
+
+            .modal-footer-ai .btn {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            /* Add Test modal */
+            #addTestModal .modal {
+                width: 96vw !important;
+                max-width: 96vw !important;
+                padding: 1.25rem !important;
+            }
+
+            #addTestModal .modal > div[style*="grid"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Score entry modal */
+            #scoreEntryModal .modal {
+                width: 95vw !important;
+                max-width: 95vw !important;
+            }
+
+            #scoreEntryModal .modal > div[style*="grid"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Export dropdown — keep it within viewport */
+            #exportMenu {
+                right: 0 !important;
+                left: auto !important;
+                min-width: 140px !important;
+            }
+
+            /* Save indicator */
+            .save-indicator {
+                bottom: 1rem !important;
+                right: 1rem !important;
+                left: 1rem !important;
+                justify-content: center !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grading-toolbar {
+                padding-top: 4rem !important;
+            }
+
+            .action-group .btn {
+                min-width: 90px !important;
+                font-size: 0.75rem !important;
+                padding: 7px 8px !important;
+                gap: 4px !important;
+            }
+
+            .action-group .btn .icon {
+                width: 14px !important;
+                height: 14px !important;
+            }
+
+            .component-modal .modal-header h2 {
+                font-size: 1rem !important;
+            }
+
+            .final-grade-value {
+                font-size: 1.5rem !important;
+            }
+        }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -764,6 +1186,14 @@
             <a href="{{ url_for('teacher.grading') }}" class="nav-item active">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 <span>Grading</span>
+            </a>
+        </div>
+
+        <div class="nav-group">
+            <span class="nav-label">AI Tools</span>
+            <a href="{{ url_for('ocr.ai_grading') }}" class="nav-item">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>AI Grading</span>
             </a>
         </div>
 
@@ -795,7 +1225,10 @@
 
         <!-- Grading Toolbar -->
         <header class="grading-toolbar">
+
+            <!-- Row 1: filters (semester / year / jump / class) -->
             <div class="class-selector">
+
                 <div class="selector-group">
                     <span class="selector-label">Semester</span>
                     <select class="select-input" id="semesterSelect" onchange="applyFilters()">
@@ -805,10 +1238,10 @@
                         <option value="Summer" {% if selected_semester == 'Summer' %}selected{% endif %}>Summer</option>
                     </select>
                 </div>
-                
+
                 <div class="selector-group">
                     <span class="selector-label">Year</span>
-                    <select class="select-input" id="yearSelect" onchange="applyFilters()" style="min-width: 150px;">
+                    <select class="select-input" id="yearSelect" onchange="applyFilters()">
                         <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
                         {% for year in available_years %}
                         <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
@@ -818,30 +1251,24 @@
                     </select>
                 </div>
 
-                <div class="selector-group" style="display: flex; flex-direction: row; align-items: flex-end; gap: 5px;">
-                    <div style="display: flex; flex-direction: column;">
-                        <span class="selector-label">Jump to Year</span>
-                        <input type="text" 
-                            id="customYearInput" 
+                <!-- Jump to Year — self-contained row, no nested flex quirks -->
+                <div class="selector-group jump-year-group">
+                    <span class="selector-label">Jump to Year</span>
+                    <div class="jump-year-row">
+                        <input type="text"
+                            id="customYearInput"
+                            class="jump-year-input"
                             placeholder="YYYY-YYYY"
-                            style="background: var(--sidebar-color);
-                                    border: 1px solid var(--border-color);
-                                    color: var(--text-main);
-                                    padding: 8px 12px;
-                                    border-radius: 6px;
-                                    font-size: 0.9rem;
-                                    width: 120px;"
                             pattern="\d{4}-\d{4}">
+                        <button type="button"
+                                class="btn btn-outline jump-year-btn"
+                                onclick="jumpToCustomYear()">
+                            Go
+                        </button>
                     </div>
-                    <button type="button" 
-                            class="btn btn-outline" 
-                            onclick="jumpToCustomYear()"
-                            style="padding: 8px 12px; height: 38px;">
-                        Go
-                    </button>
                 </div>
-                
-                <div class="selector-group">
+
+                <div class="selector-group class-group">
                     <span class="selector-label">Class</span>
                     <select class="select-input" id="classSelect" onchange="changeClass()">
                         {% if classes %}
@@ -855,17 +1282,70 @@
                         {% endif %}
                     </select>
                 </div>
+
             </div>
-            
+
+            <!-- Row 2: action buttons -->
             <div class="action-group">
+
                 <button class="btn btn-outline" onclick="addTest()">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
                     Add Test/Quiz
                 </button>
-                <button class="btn btn-ai" onclick="toggleAIModal(true)">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    AI Auto-Grade
-                </button>
+
+                <!-- Export dropdown -->
+                <div style="position: relative;" id="exportWrapper">
+                    <button class="btn btn-outline" onclick="toggleExportMenu()"
+                            {% if not selected_class %}disabled title="Select a class first"{% endif %}>
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Export
+                        <svg class="icon" style="width:14px;height:14px;" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div id="exportMenu" style="
+                        display: none;
+                        position: absolute;
+                        right: 0;
+                        top: calc(100% + 6px);
+                        background: var(--sidebar-color);
+                        border: 1px solid var(--border-color);
+                        border-radius: 8px;
+                        min-width: 160px;
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                        z-index: 100;
+                        overflow: hidden;">
+                        {% if selected_class %}
+                        <a href="{{ url_for('teacher.export_grades', class_id=selected_class.id, format='xlsx') }}"
+                        style="display:flex; align-items:center; gap:10px; padding:12px 16px;
+                                color:var(--text-main); text-decoration:none; font-size:0.875rem;
+                                transition:background 0.15s;"
+                        onmouseover="this.style.background='var(--border-color)'"
+                        onmouseout="this.style.background=''"
+                        onclick="document.getElementById('exportMenu').style.display='none'">
+                            <svg style="width:16px;height:16px;stroke:var(--success-green);fill:none;" viewBox="0 0 24 24">
+                                <path stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+                            </svg>
+                            Excel (.xlsx)
+                        </a>
+                        <a href="{{ url_for('teacher.export_grades', class_id=selected_class.id, format='csv') }}"
+                        style="display:flex; align-items:center; gap:10px; padding:12px 16px;
+                                color:var(--text-main); text-decoration:none; font-size:0.875rem;
+                                transition:background 0.15s;"
+                        onmouseover="this.style.background='var(--border-color)'"
+                        onmouseout="this.style.background=''"
+                        onclick="document.getElementById('exportMenu').style.display='none'">
+                            <svg style="width:16px;height:16px;stroke:var(--accent-blue);fill:none;" viewBox="0 0 24 24">
+                                <path stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            CSV (.csv)
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
             </div>
         </header>
 
@@ -877,21 +1357,68 @@
                     <tr id="headerRow">
                         <th style="min-width: 240px;">Student Name</th>
                         <th style="min-width: 120px;">ID Number</th>
-                        {% for test in grading_data.tests %}
-                        <th class="removable-header" style="min-width: 100px;" data-test-id="{{ test.id }}">
-                            {{ test.title }}
-                            <span class="remove-col-btn" onclick="deleteTest({{ test.id }}, '{{ test.title }}')">×</span>
-                        </th>
-                        {% endfor %}
-                        <th style="min-width: 100px; color: var(--accent-blue);">Average Grade</th>
+            
+                        {# ── Group columns by term ── #}
+                        {% if grading_data.term_tags %}
+                            {% for term in grading_data.term_tags %}
+                                {# Term header spanning all tests in that term #}
+                                {% set term_tests = grading_data.tests_by_term.get(term, []) %}
+                                <th colspan="{{ term_tests|length + 1 }}"
+                                    style="text-align:center; background:rgba(188,140,255,0.08);
+                                        color:var(--accent-purple); border-bottom:2px solid var(--accent-purple);">
+                                    {{ term }}
+                                </th>
+                            {% endfor %}
+                        {% else %}
+                            {# No tagged tests yet — show untagged tests as flat columns #}
+                            {% for test in grading_data.tests %}
+                            <th class="removable-header" style="min-width:100px;" data-test-id="{{ test.id }}">
+                                {{ test.title }}
+                                <span class="remove-col-btn" onclick="deleteTest({{ test.id }}, '{{ test.title }}')">×</span>
+                            </th>
+                            {% endfor %}
+                        {% endif %}
+            
+                        <th style="min-width:100px; color:var(--accent-blue);">Overall</th>
                     </tr>
+            
+                    {# Second header row: individual activity columns within each term #}
+                    {% if grading_data.term_tags %}
+                    <tr>
+                        <th></th>{# Student Name spacer #}
+                        <th></th>{# ID Number spacer #}
+                        {% for term in grading_data.term_tags %}
+                            {% set term_tests = grading_data.tests_by_term.get(term, []) %}
+                            {% for test in term_tests %}
+                            <th class="removable-header"
+                                style="min-width:90px; font-size:0.7rem; font-weight:500;
+                                    color:var(--text-dim); background:var(--bg-color);"
+                                data-test-id="{{ test.id }}"
+                                title="{{ test.component_tag }}">
+                                {{ test.title }}
+                                <span class="remove-col-btn" onclick="deleteTest({{ test.id }}, '{{ test.title }}')">×</span>
+                            </th>
+                            {% endfor %}
+                            {# Term grade column #}
+                            <th style="min-width:80px; font-size:0.75rem; font-weight:700;
+                                    color:var(--accent-purple); background:rgba(188,140,255,0.04);
+                                    border-left:2px solid rgba(188,140,255,0.3);">
+                                Grade
+                            </th>
+                        {% endfor %}
+                        <th></th>{# Overall spacer #}
+                    </tr>
+                    {% endif %}
                 </thead>
+            
                 <tbody id="tableBody">
                     {% for student_data in grading_data.students %}
                     <tr data-student-id="{{ student_data.student.id }}">
+            
+                        {# Student Name #}
                         <td>
                             <div class="cell-info">
-                                <div class="student-name-container">
+                                <div class="name-container">
                                     <div class="student-avatar">
                                         {{ student_data.student.first_name[0] }}{{ student_data.student.last_name[0] }}
                                     </div>
@@ -899,29 +1426,81 @@
                                 </div>
                             </div>
                         </td>
+            
+                        {# Student Number #}
                         <td>
-                            <div class="cell-info" style="font-family: monospace;">
+                            <div class="cell-info" style="font-family:monospace;">
                                 {{ student_data.student.student_number }}
                             </div>
                         </td>
-                        {% for test in grading_data.tests %}
+            
+                        {# ── Per-term activity cells + term grade cell ── #}
+                        {% if grading_data.term_tags %}
+                            {% for term in grading_data.term_tags %}
+                                {% set term_tests = grading_data.tests_by_term.get(term, []) %}
+            
+                                {# Individual activity cells #}
+                                {% for test in term_tests %}
+                                {% set grade_obj = student_data.test_grades.get(test.id) %}
+                                <td>
+                                    <input type="text"
+                                        class="cell-input"
+                                        data-student-id="{{ student_data.student.id }}"
+                                        data-test-id="{{ test.id }}"
+                                        data-term-tag="{{ test.term_tag }}"
+                                        data-component-tag="{{ test.component_tag }}"
+                                        data-is-tagged="1"
+                                        value="{% if grade_obj and grade_obj.raw_score is not none %}{{ '%.1f'|format(grade_obj.raw_score) }}/{{ '%.1f'|format(grade_obj.max_score) if grade_obj.max_score else '?' }}{% else %}-{% endif %}"
+                                        placeholder="-"
+                                        title="{{ test.component_tag }} — enter raw score"
+                                        onclick="openScoreEntry(this, {{ student_data.student.id }}, {{ test.id }}, '{{ test.term_tag }}', '{{ test.component_tag }}')">
+                                </td>
+                                {% endfor %}
+            
+                                {# Term Grade cell — read-only, shows INC or PH grade #}
+                                {% set tg = student_data.term_grades.get(term, {}) %}
+                                <td style="border-left:2px solid rgba(188,140,255,0.3);">
+                                    <input type="text"
+                                        class="cell-input cell-calc term-grade-cell"
+                                        id="term-{{ student_data.student.id }}-{{ term|replace(' ','_') }}"
+                                        data-student-id="{{ student_data.student.id }}"
+                                        data-term="{{ term }}"
+                                        value="{{ tg.get('display', 'INC') }}"
+                                        readonly
+                                        style="{% if tg.get('display','INC') == 'INC' %}color:var(--warning-orange,#d29922);{% endif %}
+                                                background:rgba(188,140,255,0.04); cursor:default;"
+                                        title="{% if tg.get('missing') %}Missing: {{ tg.get('missing')|join(', ') }}{% else %}{{ term }} Grade{% endif %}">
+                                </td>
+            
+                            {% endfor %}
+            
+                        {% else %}
+                            {# Untagged tests — flat display #}
+                            {% for test in grading_data.tests %}
+                            <td>
+                                <input type="text"
+                                    class="cell-input"
+                                    data-student-id="{{ student_data.student.id }}"
+                                    data-test-id="{{ test.id }}"
+                                    data-is-tagged="0"
+                                    value="{{ '%.2f'|format(student_data.test_grades[test.id].final_grade) if student_data.test_grades.get(test.id) and student_data.test_grades[test.id].final_grade is not none else '-' }}"
+                                    readonly
+                                    placeholder="-"
+                                    onclick="openComponentModal({{ student_data.student.id }}, {{ test.id }}, '{{ student_data.student.get_full_name() }}', '{{ test.title }}')">
+                            </td>
+                            {% endfor %}
+                        {% endif %}
+            
+                        {# Overall Average #}
                         <td>
-                            <input type="text" 
-                                   class="cell-input" 
-                                   data-student-id="{{ student_data.student.id }}"
-                                   data-test-id="{{ test.id }}"
-                                   value="{{ '%.2f'|format(student_data.test_grades[test.id]) if student_data.test_grades[test.id] is not none else '-' }}"
-                                   readonly
-                                   placeholder="-"
-                                   onclick="openComponentModal({{ student_data.student.id }}, {{ test.id }}, '{{ student_data.student.get_full_name() }}', '{{ test.title }}')">
-                        </td>
-                        {% endfor %}
-                        <td>
-                            <input type="text" 
-                                   class="cell-input cell-calc" 
-                                   id="avg-{{ student_data.student.id }}"
-                                   value="{{ '%.2f'|format(student_data.enrollment.final_grade) if student_data.enrollment.final_grade else '-' }}" 
-                                   readonly>
+                            <input type="text"
+                                class="cell-input cell-calc"
+                                id="avg-{{ student_data.student.id }}"
+                                {% set any_inc = student_data.term_grades.values() | selectattr('display', 'equalto', 'INC') | list | length > 0 %}
+                                {% set overall_display = '%.2f'|format(student_data.enrollment.final_grade) if student_data.enrollment.final_grade else ('INC' if any_inc else '—') %}
+                                value="{{ overall_display }}"
+                                style="{% if overall_display == 'INC' %}color:var(--warning-orange,#d29922);{% endif %}"
+                                readonly
                         </td>
                     </tr>
                     {% endfor %}
@@ -972,6 +1551,156 @@
             </div>
         </div>
     </div>
+    
+    <!-- Add Test Modal -->
+    <div class="modal-overlay" id="addTestModal">
+        <div class="modal" style="max-width: 480px;">
+            <h2 style="margin-bottom: 0.5rem;">Add New Activity</h2>
+            <p id="addTestClassName" style="color: var(--text-dim); font-size: 0.875rem; margin-bottom: 1.5rem;"></p>
+    
+            <input type="hidden" id="addTestClassId">
+    
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display:block; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">
+                    Activity Name
+                </label>
+                <input type="text" id="addTestTitleInput"
+                    class="select-input"
+                    placeholder="e.g. Prelim Quiz 1, Midterm Exam, Final Project"
+                    style="width:100%;">
+            </div>
+    
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">
+                        Term
+                    </label>
+                    <select id="addTestTermSelect" class="select-input" style="width:100%;">
+                        <option value="">— Select Term —</option>
+                        <option value="Prelims">Prelims</option>
+                        <option value="Midterms">Midterms</option>
+                        <option value="Finals">Finals</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">
+                        Component
+                    </label>
+                    <select id="addTestComponentSelect" class="select-input" style="width:100%;">
+                        <option value="">— Select Component —</option>
+                        {% if selected_class %}
+                            {% set formula = selected_class.get_grading_formula() %}
+                            {% for comp in formula.get('components', []) %}
+                            <option value="{{ comp.name }}">{{ comp.name }} ({{ comp.weight }}%)</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+    
+            <div style="background:rgba(88,166,255,0.06); border:1px solid rgba(88,166,255,0.2); border-radius:6px; padding:10px 12px; margin-bottom:1.25rem; font-size:0.8rem; color:var(--text-dim);">
+                ℹ️ The term and component tags determine how this activity is included in the grade formula calculation.
+                A student's term grade shows <strong style="color:var(--accent-blue);">INC</strong> until every component has at least one scored activity.
+            </div>
+    
+            <div class="modal-footer-ai" style="margin-top:0;">
+                <button type="button" class="btn btn-outline" onclick="closeAddTestModal()">Cancel</button>
+                <button type="button" class="btn btn-save" onclick="submitAddTest()">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                    Add Activity
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+        REPLACE the entire #scoreEntryModal div in grading.html
+        with this fixed version.
+        ============================================================ -->
+
+    <div class="modal-overlay" id="scoreEntryModal">
+        <div class="modal" style="max-width: 360px; width: 92vw; box-sizing: border-box;">
+            <h2 id="scoreModalTitle" style="margin-bottom: 4px; font-size: 1.2rem;">Enter Score</h2>
+            <p id="scoreModalSub" style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 1.25rem;"></p>
+
+            <input type="hidden" id="scoreStudentId">
+            <input type="hidden" id="scoreTestId">
+            <input type="hidden" id="scoreTermTag">
+            <input type="hidden" id="scoreComponentTag">
+
+            <!-- Score inputs — fixed grid that doesn't overflow -->
+            <div style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+                width: 100%;
+                box-sizing: border-box;
+            ">
+                <div style="min-width: 0;">
+                    <label style="
+                        display: block;
+                        font-size: 0.75rem;
+                        color: var(--text-dim);
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        margin-bottom: 5px;
+                    ">Student Score</label>
+                    <input type="number" id="scoreRawInput"
+                        style="
+                            width: 100%;
+                            box-sizing: border-box;
+                            min-width: 0;
+                            background: var(--sidebar-color);
+                            border: 1px solid var(--border-color);
+                            color: var(--text-main);
+                            padding: 10px 12px;
+                            border-radius: 6px;
+                            font-size: 1.1rem;
+                            text-align: center;
+                            outline: none;
+                        "
+                        onfocus="this.style.borderColor='var(--accent-purple)'"
+                        onblur="this.style.borderColor='var(--border-color)'"
+                        min="0" step="0.5" placeholder="e.g. 20">
+                </div>
+                <div style="min-width: 0;">
+                    <label style="
+                        display: block;
+                        font-size: 0.75rem;
+                        color: var(--text-dim);
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        margin-bottom: 5px;
+                    ">Out of (Max)</label>
+                    <input type="number" id="scoreMaxInput"
+                        style="
+                            width: 100%;
+                            box-sizing: border-box;
+                            min-width: 0;
+                            background: var(--sidebar-color);
+                            border: 1px solid var(--border-color);
+                            color: var(--text-main);
+                            padding: 10px 12px;
+                            border-radius: 6px;
+                            font-size: 1.1rem;
+                            text-align: center;
+                            outline: none;
+                        "
+                        onfocus="this.style.borderColor='var(--accent-purple)'"
+                        onblur="this.style.borderColor='var(--border-color)'"
+                        min="1" step="1" placeholder="e.g. 25">
+                </div>
+            </div>
+
+            <div class="modal-footer-ai" style="margin-top: 0;">
+                <button type="button" class="btn btn-outline" onclick="closeScoreEntry()">Cancel</button>
+                <button type="button" class="btn btn-save" id="saveScoreBtn" onclick="saveScore()">
+                    Save Score
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- AI Modal -->
     <div class="modal-overlay" id="aiModal">
@@ -1018,6 +1747,78 @@
         <span>Saving changes...</span>
     </div>
 
+    <div class="modal-overlay" id="deleteTestModal">
+        <div class="modal" style="max-width: 420px; width: 92vw; box-sizing: border-box;">
+    
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="
+                    width: 52px;
+                    height: 52px;
+                    background: rgba(248, 81, 73, 0.1);
+                    border: 1px solid rgba(248, 81, 73, 0.25);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 1rem;
+                ">
+                    <svg style="width:22px;height:22px;stroke:#f85149;fill:none;stroke-width:2;" viewBox="0 0 24 24">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h2 style="font-size: 1.15rem; color: #fff; margin-bottom: 0.5rem;">Delete Test Column?</h2>
+                <p style="color: var(--text-dim); font-size: 0.875rem; line-height: 1.6;">
+                    You are about to delete
+                    <strong id="deleteTestName" style="color: var(--text-main);">this test</strong>.
+                    All grades entered for this test will be
+                    <strong style="color: #f85149;">permanently removed</strong>
+                    and cannot be recovered.
+                </p>
+            </div>
+    
+            <div style="display: flex; gap: 10px;">
+                <button type="button"
+                        onclick="closeDeleteTestModal()"
+                        style="
+                            flex: 1;
+                            padding: 10px;
+                            border-radius: 6px;
+                            border: 1px solid var(--border-color);
+                            background: transparent;
+                            color: var(--text-main);
+                            font-weight: 600;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                            transition: border-color 0.2s;
+                        "
+                        onmouseover="this.style.borderColor='var(--text-dim)'"
+                        onmouseout="this.style.borderColor='var(--border-color)'">
+                    Cancel
+                </button>
+                <button type="button"
+                        id="confirmDeleteTestBtn"
+                        onclick="confirmDeleteTest()"
+                        style="
+                            flex: 1;
+                            padding: 10px;
+                            border-radius: 6px;
+                            border: none;
+                            background: #f85149;
+                            color: white;
+                            font-weight: 600;
+                            cursor: pointer;
+                            font-size: 0.9rem;
+                            transition: opacity 0.2s;
+                        "
+                        onmouseover="this.style.opacity='0.85'"
+                        onmouseout="this.style.opacity='1'">
+                    Delete Test
+                </button>
+            </div>
+    
+        </div>
+    </div>
+
     <script>
         // ============================================================================
         // GLOBAL STATE
@@ -1033,7 +1834,20 @@
         // ============================================================================
         // COMPONENT MODAL FUNCTIONS
         // ============================================================================
-        
+
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            if (!menu) return;
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('exportWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                const menu = document.getElementById('exportMenu');
+                if (menu) menu.style.display = 'none';
+            }
+        });
         async function openComponentModal(studentId, testId, studentName, testName) {
             currentStudentId = studentId;
             currentTestId = testId;
@@ -1326,19 +2140,37 @@
         
         async function updateStudentAverage(studentId) {
             const classId = document.getElementById('classSelect').value;
-            
+
             try {
                 const response = await fetch(`/teacher/grading/student-average?student_id=${studentId}&class_id=${classId}`);
                 const data = await response.json();
-                
-                if (data.success && data.average !== null) {
-                    const avgCell = document.getElementById(`avg-${studentId}`);
-                    if (avgCell) {
-                        avgCell.value = data.average.toFixed(2);
+
+                if (!data.success) return;
+
+                // Update overall average cell
+                const avgCell = document.getElementById(`avg-${studentId}`);
+                if (avgCell) {
+                    avgCell.value = data.average_display || 'INC';
+                    avgCell.style.color = data.average
+                        ? ''
+                        : 'var(--warning-orange,#d29922)';
+                }
+
+                // Update each term grade cell
+                if (data.term_grades) {
+                    for (const [term, result] of Object.entries(data.term_grades)) {
+                        const termCellId = `term-${studentId}-${term.replace(/ /g,'_')}`;
+                        const termCell = document.getElementById(termCellId);
+                        if (termCell) {
+                            termCell.value = result.display || 'INC';
+                            termCell.style.color = (result.display === 'INC' || !result.grade)
+                                ? 'var(--warning-orange,#d29922)'
+                                : '';
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Error updating average:', error);
+                console.error('Error updating averages:', error);
             }
         }
         
@@ -1377,15 +2209,10 @@
         function applyFilters() {
             const year = document.getElementById('yearSelect').value;
             const semester = document.getElementById('semesterSelect').value;
-            const classId = document.getElementById('classSelect').value;
-            
-            // ✅ Always include both params
+
+            // ✅ Never carry class_id when changing year/semester — let backend pick the first available
             let url = `{{ url_for('teacher.grading') }}?year=${encodeURIComponent(year)}&semester=${encodeURIComponent(semester)}`;
-            
-            if (classId) {
-                url += `&class_id=${classId}`;
-            }
-            
+
             window.location.href = url;
         }
 
@@ -1424,53 +2251,223 @@
         }
 
         function addTest() {
+            const classId   = document.getElementById('classSelect').value;
             const className = document.getElementById('classSelect').selectedOptions[0].text;
-            const testName = prompt(`Add new test/quiz for ${className}:\n\nEnter test name (e.g., Quiz 3, Midterm Exam):`);
-            
-            if (!testName || testName.trim() === '') {
+        
+            if (!classId) {
+                alert('Please select a class first.');
                 return;
             }
-            
-            const classId = document.getElementById('classSelect').value;
-            
+        
+            // Show the Add Test modal (see CHANGE 2 below for the modal HTML)
+            document.getElementById('addTestModal').classList.add('show');
+            document.getElementById('addTestClassId').value = classId;
+            document.getElementById('addTestClassName').textContent = className;
+        }
+
+        function closeAddTestModal() {
+            document.getElementById('addTestModal').classList.remove('show');
+            document.getElementById('addTestTitleInput').value = '';
+            document.getElementById('addTestTermSelect').value = '';
+            document.getElementById('addTestComponentSelect').value = '';
+        }
+ 
+        function submitAddTest() {
+            const classId     = document.getElementById('addTestClassId').value;
+            const title       = document.getElementById('addTestTitleInput').value.trim();
+            const termTag     = document.getElementById('addTestTermSelect').value;
+            const componentTag = document.getElementById('addTestComponentSelect').value;
+        
+            if (!title) {
+                alert('Please enter a test name.');
+                return;
+            }
+            if (!termTag || !componentTag) {
+                alert('Please select both a Term and a Component.');
+                return;
+            }
+        
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '{{ url_for('teacher.create_test') }}';
-            
-            const classInput = document.createElement('input');
-            classInput.type = 'hidden';
-            classInput.name = 'class_id';
-            classInput.value = classId;
-            
-            const titleInput = document.createElement('input');
-            titleInput.type = 'hidden';
-            titleInput.name = 'title';
-            titleInput.value = testName;
-            
-            form.appendChild(classInput);
-            form.appendChild(titleInput);
+            form.action = '{{ url_for("teacher.create_test") }}';
+        
+            const fields = {
+                class_id:      classId,
+                title:         title,
+                term_tag:      termTag,
+                component_tag: componentTag
+            };
+        
+            for (const [name, value] of Object.entries(fields)) {
+                const input = document.createElement('input');
+                input.type  = 'hidden';
+                input.name  = name;
+                input.value = value;
+                form.appendChild(input);
+            }
+        
             document.body.appendChild(form);
+            closeAddTestModal();
             form.submit();
         }
 
+        let _pendingDeleteTestId = null;
+ 
         function deleteTest(testId, testName) {
-            if (!confirm(`Delete "${testName}"?\n\nThis will remove all grades for this test. This action cannot be undone.`)) {
-                return;
-            }
-            
+            _pendingDeleteTestId = testId;
+            document.getElementById('deleteTestName').textContent = `"${testName}"`;
+            document.getElementById('deleteTestModal').classList.add('show');
+        }
+        
+        function closeDeleteTestModal() {
+            document.getElementById('deleteTestModal').classList.remove('show');
+            _pendingDeleteTestId = null;
+        }
+        
+        function confirmDeleteTest() {
+            if (!_pendingDeleteTestId) return;
+        
+            const btn = document.getElementById('confirmDeleteTestBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting…';
+        
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '{{ url_for('teacher.delete_test') }}';
-            
+            form.action = "{{ url_for('teacher.delete_test') }}";
+        
             const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'test_id';
-            input.value = testId;
-            
+            input.type  = 'hidden';
+            input.name  = 'test_id';
+            input.value = _pendingDeleteTestId;
+        
             form.appendChild(input);
             document.body.appendChild(form);
             form.submit();
         }
+        
+        // Close on backdrop click + Escape key
+        // (add these alongside your other modal event listeners)
+        document.getElementById('deleteTestModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteTestModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDeleteTestModal();
+        });
+
+        let _scoreEntryCell = null;
+ 
+        function openScoreEntry(inputEl, studentId, testId, termTag, componentTag) {
+            _scoreEntryCell = inputEl;
+
+            document.getElementById('scoreStudentId').value    = studentId;
+            document.getElementById('scoreTestId').value       = testId;
+            document.getElementById('scoreTermTag').value      = termTag;
+            document.getElementById('scoreComponentTag').value = componentTag;
+            document.getElementById('scoreModalTitle').textContent =
+                document.querySelector(`th[data-test-id="${testId}"]`)?.textContent?.trim() || 'Enter Score';
+            document.getElementById('scoreModalSub').textContent =
+                `${termTag} · ${componentTag}`;
+
+            // ── Pre-fill from data attributes (cleaner than parsing the display value) ──
+            const existingRaw = inputEl.dataset.rawScore;
+            const existingMax = inputEl.dataset.maxScore;
+
+            document.getElementById('scoreRawInput').value = existingRaw || '';
+            document.getElementById('scoreMaxInput').value = existingMax || '';
+
+            document.getElementById('scoreEntryModal').classList.add('show');
+            setTimeout(() => document.getElementById('scoreRawInput').focus(), 80);
+        }   
+        
+        function closeScoreEntry() {
+            document.getElementById('scoreEntryModal').classList.remove('show');
+            _scoreEntryCell = null;
+        }
+        
+        async function saveScore() {
+            const studentId    = document.getElementById('scoreStudentId').value;
+            const testId       = document.getElementById('scoreTestId').value;
+            const termTag      = document.getElementById('scoreTermTag').value;
+            const rawScore     = parseFloat(document.getElementById('scoreRawInput').value);
+            const maxScore     = parseFloat(document.getElementById('scoreMaxInput').value);
+        
+            if (isNaN(rawScore) || isNaN(maxScore)) {
+                alert('Please enter both the score and the max score.');
+                return;
+            }
+            if (maxScore <= 0) {
+                alert('Max score must be greater than 0.');
+                return;
+            }
+            if (rawScore < 0 || rawScore > maxScore) {
+                alert(`Score must be between 0 and ${maxScore}.`);
+                return;
+            }
+        
+            const btn = document.getElementById('saveScoreBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            showSaveIndicator();
+        
+            try {
+                const fd = new FormData();
+                fd.append('student_id', studentId);
+                fd.append('test_id',    testId);
+                fd.append('raw_score',  rawScore);
+                fd.append('max_score',  maxScore);
+        
+                const resp = await fetch('{{ url_for("teacher.update_grade") }}', {
+                    method: 'POST', body: fd
+                });
+                const data = await resp.json();
+        
+                if (data.success) {
+                    // Update cell to show X/Y format and store data attributes
+                    if (_scoreEntryCell) {
+                        _scoreEntryCell.value = `${rawScore % 1 === 0 ? rawScore : rawScore.toFixed(1)}/${maxScore % 1 === 0 ? maxScore : maxScore.toFixed(1)}`;
+                        _scoreEntryCell.dataset.rawScore = rawScore;
+                        _scoreEntryCell.dataset.maxScore = maxScore;
+                    }
+
+                    // Update the term grade cell
+                    const termCellId = `term-${studentId}-${termTag.replace(/ /g,'_')}`;
+                    const termCell   = document.getElementById(termCellId);
+                    if (termCell) {
+                        termCell.value = data.term_grade_display || 'INC';
+                        termCell.style.color = (data.term_grade_display === 'INC' || !data.term_grade)
+                            ? 'var(--warning-orange,#d29922)'
+                            : '';
+                        if (data.missing_components && data.missing_components.length > 0) {
+                            termCell.title = 'Missing: ' + data.missing_components.join(', ');
+                        } else {
+                            termCell.title = termTag + ' Grade';
+                        }
+                    }
+
+                    // Refresh overall average
+                    await updateStudentAverage(studentId);
+
+                    closeScoreEntry();
+                    showAlert('Score saved!', 'success');
+                } else {
+                    showAlert('Error: ' + (data.error || 'Save failed'), 'error');
+                }
+            } catch (err) {
+                showAlert('Network error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Score';
+                hideSaveIndicator();
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.addEventListener('DOMContentLoaded', () => {
+            ['scoreRawInput','scoreMaxInput'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') saveScore(); });
+            });
+        });
 
         function toggleAIModal(show) {
             document.getElementById('aiModal').classList.toggle('show', show);
@@ -1496,21 +2493,16 @@
         }
 
         function processAIGrading() {
-            const fileInput = document.getElementById('fileInput');
             const targetTest = document.getElementById('targetTestSelect').value;
-            
-            if (!fileInput.files || !fileInput.files[0]) {
-                alert('Please select a file first.');
+    
+            if (!targetTest || targetTest === 'new') {
+                alert('Please select a test first.');
                 return;
             }
-            
-            if (!targetTest) {
-                alert('Please select a target test.');
-                return;
-            }
-            
-            alert('AI Auto-Grade feature coming soon!\n\nThis will use computer vision to:\n1. Extract student names/IDs from the image\n2. Read handwritten grades\n3. Auto-fill the spreadsheet\n\nFor now, please enter grades manually.');
+    
+            // Close the modal and navigate to the AI Grading review page
             toggleAIModal(false);
+            window.location.href = `/ocr/ai-grading?test_id=${targetTest}`;
         }
 
         function showAlert(message, type) {
@@ -1561,5 +2553,6 @@
             }
         });
     </script>
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

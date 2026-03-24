@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>Acadify — Privacy Policy</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card: #161b22;
+            --border: #1f2937;
+            --blue: #0066ff;
+            --blue-dim: rgba(0,102,255,0.1);
+            --text: #ffffff;
+            --muted: #9ca3af;
+            --dim: #6b7280;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ── Nav ── */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.75rem 4rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo svg { width: 22px; height: 22px; stroke: var(--blue); fill: none; }
+
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+        .nav-btn {
+            background: var(--blue);
+            color: #fff;
+            padding: 0.55rem 1.4rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .nav-btn:hover { opacity: 0.85; }
+
+        /* ── Layout ── */
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem 6rem;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        /* ── Sticky sidebar nav ── */
+        .toc {
+            position: sticky;
+            top: 2rem;
+        }
+
+        .toc-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 1rem;
+        }
+
+        .toc ul { list-style: none; }
+
+        .toc li { margin-bottom: 0.2rem; }
+
+        .toc a {
+            display: block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s, background 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .toc a:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.04);
+            border-left-color: var(--blue);
+        }
+
+        /* ── Main content ── */
+        .doc-header {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .eyebrow {
+            display: inline-block;
+            background: var(--blue-dim);
+            color: var(--blue);
+            border: 1px solid rgba(0,102,255,0.2);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 3px 12px;
+            border-radius: 999px;
+            margin-bottom: 1rem;
+        }
+
+        .doc-header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+        }
+
+        .doc-header p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .updated-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 1rem;
+        }
+
+        .updated-badge span { color: var(--text); font-weight: 600; }
+
+        /* ── Sections ── */
+        .doc-section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 2rem;
+        }
+
+        .doc-section h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .doc-section h2::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 18px;
+            background: var(--blue);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .doc-section p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.75rem;
+        }
+
+        .doc-section p:last-child { margin-bottom: 0; }
+
+        .doc-section ul {
+            list-style: none;
+            margin: 0.75rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .doc-section ul li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .doc-section ul li::before {
+            content: '–';
+            color: var(--blue);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+
+        .highlight-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--blue);
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-size: 0.88rem;
+            color: var(--muted);
+            line-height: 1.7;
+            margin: 1rem 0;
+        }
+
+        .highlight-box strong { color: var(--text); }
+
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem 4rem;
+        }
+
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .footer-logo svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; }
+
+        .footer-nav { display: flex; gap: 1.5rem; list-style: none; }
+
+        .footer-nav a {
+            color: var(--dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .footer-nav a:hover { color: var(--text); }
+
+        .footer-copy {
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--dim);
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        /* ── Tablet ── */
+        @media (max-width: 1024px) {
+            .navbar { padding: 1.5rem 2.5rem; }
+            .page-wrap { gap: 2.5rem; padding: 3rem 2rem 4rem; }
+        }
+
+        /* ── Tablet / Mobile ── */
+        @media (max-width: 900px) {
+            .navbar { padding: 1rem 1.25rem; }
+            .nav-links { display: none; }
+            .nav-btn { padding: 0.45rem 1rem; font-size: 0.8rem; }
+
+            .page-wrap {
+                grid-template-columns: 1fr;
+                gap: 0;
+                padding: 2.5rem 1.25rem 4rem;
+            }
+            .toc { display: none; }
+
+            .doc-header { margin-bottom: 2rem; padding-bottom: 1.5rem; }
+            .doc-header h1 { font-size: 1.75rem; }
+
+            .doc-section { margin-bottom: 2.25rem; }
+            .doc-section h2 { font-size: 1.05rem; }
+            .doc-section p,
+            .doc-section ul li { font-size: 0.875rem; }
+
+            .highlight-box { padding: 1rem; font-size: 0.84rem; }
+
+            .footer { padding: 1.5rem 1.25rem; }
+            .footer-inner { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .footer-nav { flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+        }
+
+        /* ── Small phones ── */
+        @media (max-width: 480px) {
+            .doc-header h1 { font-size: 1.4rem; }
+            .eyebrow { font-size: 0.68rem; }
+            .page-wrap { padding: 2rem 1rem 3.5rem; }
+            .updated-badge { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="logo">
+            <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+            Acadify
+        </a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('privacy') }}" class="active">Privacy</a></li>
+        </ul>
+        <a href="{{ url_for('auth.student_login') }}" class="nav-btn">Sign In</a>
+    </nav>
+
+    <div class="page-wrap">
+
+        <!-- Sticky TOC -->
+        <aside class="toc">
+            <p class="toc-title">On This Page</p>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#data-collected">Data We Collect</a></li>
+                <li><a href="#data-use">How We Use It</a></li>
+                <li><a href="#data-storage">Storage & Security</a></li>
+                <li><a href="#sharing">Sharing</a></li>
+                <li><a href="#rights">Your Rights</a></li>
+                <li><a href="#cookies">Cookies</a></li>
+                <li><a href="#changes">Policy Changes</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ul>
+        </aside>
+
+        <!-- Document body -->
+        <main>
+            <div class="doc-header">
+                <span class="eyebrow">Legal</span>
+                <h1>Privacy Policy</h1>
+                <p>This policy explains what data Acadify collects, how it is used, and how it is protected within the system.</p>
+                <div class="updated-badge">
+                    📅 Last updated: <span>January 2026</span>
+                </div>
+            </div>
+
+            <div class="doc-section" id="overview">
+                <h2>Overview</h2>
+                <p>Acadify ("the System") is a school grading and student monitoring platform operated by and for educational institutions. This Privacy Policy applies to all users of the system — administrators, teachers, and students.</p>
+                <p>By using Acadify, you agree to the collection and use of information as described in this policy. If you do not agree, please discontinue use and contact your institution's administrator.</p>
+            </div>
+
+            <div class="doc-section" id="data-collected">
+                <h2>Data We Collect</h2>
+                <p>We collect only what is necessary to operate the system:</p>
+                <ul>
+                    <li><strong>Account data:</strong> Email address, hashed password, and user role.</li>
+                    <li><strong>Student profile:</strong> Student number, full name, department, program, year level, and section.</li>
+                    <li><strong>Teacher profile:</strong> Employee number, full name, department, and specialization.</li>
+                    <li><strong>Academic data:</strong> Class enrollments, test records, component scores, and calculated grades.</li>
+                    <li><strong>Uploaded files:</strong> Paper images uploaded through the AI Grading feature (stored temporarily for OCR processing).</li>
+                    <li><strong>Activity metadata:</strong> Timestamps for grade submissions and account creation dates.</li>
+                </ul>
+                <div class="highlight-box">
+                    <strong>We do not collect:</strong> payment information, precise location data, biometric data, or any data not directly related to academic record-keeping.
+                </div>
+            </div>
+
+            <div class="doc-section" id="data-use">
+                <h2>How We Use It</h2>
+                <p>All data collected is used exclusively for the following purposes:</p>
+                <ul>
+                    <li>Authenticating users and managing access by role.</li>
+                    <li>Displaying grade records to the appropriate student or teacher.</li>
+                    <li>Computing GPA, term grades, and academic standing.</li>
+                    <li>Generating reports and CSV exports for institutional records.</li>
+                    <li>Running the AI grading pipeline to match uploaded paper images to enrolled students.</li>
+                </ul>
+                <p>We do not use your data for advertising, profiling, or any commercial purpose.</p>
+            </div>
+
+            <div class="doc-section" id="data-storage">
+                <h2>Storage &amp; Security</h2>
+                <p>All data is stored in a secured relational database. Passwords are never stored in plain text — they are hashed using BCrypt before being saved.</p>
+                <ul>
+                    <li>Database access is restricted to the application server only.</li>
+                    <li>Session cookies are HTTP-only and protected from cross-site scripting.</li>
+                    <li>Paper images uploaded for AI grading are stored on the server and associated with the specific test record. They are not publicly accessible.</li>
+                    <li>Production deployments use HTTPS to encrypt data in transit.</li>
+                </ul>
+            </div>
+
+            <div class="doc-section" id="sharing">
+                <h2>Sharing</h2>
+                <p>Acadify does not sell, rent, or share your personal data with third parties.</p>
+                <p>Data may only be disclosed in the following limited circumstances:</p>
+                <ul>
+                    <li>To your institution's administrators who have been granted admin access within the system.</li>
+                    <li>If required by Philippine law or a valid legal order.</li>
+                    <li>To prevent fraud, abuse, or safety threats to the system or its users.</li>
+                </ul>
+            </div>
+
+            <div class="doc-section" id="rights">
+                <h2>Your Rights</h2>
+                <p>Under the Philippines' Data Privacy Act of 2012 (Republic Act 10173), you have the right to:</p>
+                <ul>
+                    <li>Be informed about what personal data is being collected and how it is used.</li>
+                    <li>Access your personal data held in the system.</li>
+                    <li>Request correction of inaccurate data.</li>
+                    <li>Request erasure of your data, subject to institutional record-keeping obligations.</li>
+                    <li>Object to the processing of your personal data in certain circumstances.</li>
+                </ul>
+                <p>To exercise any of these rights, contact your institution's registrar or the system administrator.</p>
+            </div>
+
+            <div class="doc-section" id="cookies">
+                <h2>Cookies</h2>
+                <p>Acadify uses a single session cookie to keep you logged in. This cookie:</p>
+                <ul>
+                    <li>Is HTTP-only (not accessible via JavaScript).</li>
+                    <li>Does not track browsing activity outside the system.</li>
+                    <li>Expires after 7 days of inactivity or upon logout.</li>
+                </ul>
+                <p>No third-party analytics, advertising, or tracking cookies are used.</p>
+            </div>
+
+            <div class="doc-section" id="changes">
+                <h2>Policy Changes</h2>
+                <p>We may update this policy as the system evolves. When changes are made, the "Last updated" date at the top of this page will be revised. Continued use of the system after an update constitutes acceptance of the revised policy.</p>
+            </div>
+
+            <div class="doc-section" id="contact">
+                <h2>Contact Us</h2>
+                <p>If you have questions or concerns about this Privacy Policy or your data, please reach out:</p>
+                <div class="highlight-box">
+                    <strong>Acadify System Administrator</strong><br>
+                    University of Rizal System — Morong<br>
+                    Sumulong St, Morong, Rizal<br>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <a href="{{ url_for('index') }}" class="footer-logo">
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                Acadify
+            </a>
+            <ul class="footer-nav">
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+            </ul>
+        </div>
+        <div class="footer-copy">
+            &copy; <span id="yr"></span> Acadify&trade;. All Rights Reserved

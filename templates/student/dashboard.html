@@ -412,6 +412,7 @@
             .standing-card { grid-column: span 2; }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
 
@@ -702,6 +703,6 @@
             if (e.key === 'Enter') jumpToCustomYear();
         });
     </script>
-
+    <script src="{{ url_for('static', filename='responsive.js') }}"></script>
 </body>
 </html>

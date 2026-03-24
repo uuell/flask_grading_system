@@ -7,6 +7,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='logo.svg') }}">
     <!-- Load Tailwind CSS via CDN -->
     <title>Acadify - School Grading System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='responsive.css') }}">
 </head>
 <body>
     <div class="cursor-light"></div>
@@ -35,7 +36,7 @@
             <h2>Acadify</h2>
             <h1>Your modern school grading and monitoring system.</h1>
             <p>Visualize student performance instantly.</p>
-            <button class="btn btn-cta">Get Started Now</button>
+            <a href="{{ url_for('about') }}" class="btn btn-cta">About Acadify</a>
         </div>
 
         <div class="dashboard-preview">
@@ -127,9 +128,8 @@
                 
                 <!-- Footer Navigation Links -->
                 <ul class="footer-nav-links">
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="{{ url_for('about') }}">About</a></li>
+                    <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
                 </ul>
             </div>
             

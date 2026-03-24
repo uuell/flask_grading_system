@@ -8,6 +8,7 @@ from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy import func
 import json
+import os
 
 
 class User(UserMixin, db.Model):
@@ -73,49 +74,140 @@ class Student(db.Model):
         """Return full name"""
         return f"{self.first_name} {self.last_name}"
     
+    def _get_per_class_ph_grade(self, enrollment):
+        """
+        Return the Philippine grade (1.0-5.0) for one enrollment.
+ 
+        NEW system (tests have term_tag):
+            enrollment.final_grade is set by _update_enrollment_average()
+            in teacher routes. It is already a PH grade. Use it directly.
+ 
+        OLD system (tests have no term_tag):
+            enrollment.final_grade was never computed (always NULL).
+            Fall back to averaging Grade.final_grade values per test —
+            those were stored directly as PH grades in the old system.
+ 
+        Returns float or None (None = no grade yet, skip this class for GPA).
+        """
+        cls = enrollment.class_
+ 
+        # Discriminator: any tagged test means this is a new-system class
+        has_tagged = (
+            Test.query
+            .filter_by(class_id=cls.id)
+            .filter(Test.term_tag.isnot(None))
+            .first()
+        ) is not None
+ 
+        if has_tagged:
+            # New system — enrollment.final_grade is the PH grade
+            return enrollment.final_grade  # None if not yet computed
+ 
+        else:
+            # Old system — average per-test Grade.final_grade values
+            old_grades = (
+                Grade.query
+                .join(Test)
+                .filter(
+                    Test.class_id        == cls.id,
+                    Grade.student_id     == self.id,
+                    Grade.final_grade.isnot(None)
+                )
+                .all()
+            )
+ 
+            if not old_grades:
+                return None
+ 
+            return round(
+                sum(g.final_grade for g in old_grades) / len(old_grades), 2
+            )
+ 
     def get_semester_gpa(self, school_year, semester, calculation_method='weighted'):
         """
-        Calculate GPA for a specific semester
-        
-        Args:
-            school_year: e.g., "2024-2025"
-            semester: e.g., "1st Semester"
-            calculation_method: 'weighted', 'simple', or 'major_only'
-        
-        Returns:
-            float: GPA value
+        Calculate GPA for a specific semester.
+ 
+        Reads one PH grade per enrolled class (via _get_per_class_ph_grade),
+        never raw test scores. Handles both old and new grading systems.
         """
-        # Get all grades for this semester
-        grades = self.grades.join(Grade.test).join(Test.class_).filter(
-            Class.school_year == school_year,
-            Class.semester == semester,
-            Grade.final_grade.isnot(None)
-        ).all()
-        
-        if not grades:
+        enrollments = (
+            Enrollment.query
+            .filter_by(student_id=self.id)
+            .join(Class)
+            .filter(
+                Class.school_year == school_year,
+                Class.semester    == semester,
+            )
+            .all()
+        )
+ 
+        if not enrollments:
             return None
-        
+ 
+        # Build (ph_grade, units, is_major) for each class that has a grade
+        graded = []
+        for e in enrollments:
+            ph = self._get_per_class_ph_grade(e)
+            if ph is not None:
+                graded.append((ph, e.class_.effective_units, e.class_.is_major_subject))
+ 
+        if not graded:
+            return None
+ 
         if calculation_method == 'weighted':
-            total_points = sum(g.final_grade * g.test.class_.effective_units for g in grades)
-            total_units = sum(g.test.class_.effective_units for g in grades)
+            total_points = sum(ph * units for ph, units, _ in graded)
+            total_units  = sum(units      for _,  units, _ in graded)
             return round(total_points / total_units, 2) if total_units > 0 else None
-        
+ 
         elif calculation_method == 'simple':
-            # Simple average (no weighting)
-            total = sum(g.final_grade for g in grades)
-            return round(total / len(grades), 2)
-        
+            return round(sum(ph for ph, _, _ in graded) / len(graded), 2)
+ 
         elif calculation_method == 'major_only':
-            # Only major subjects (non-PE, non-elective)
-            major_grades = [g for g in grades if g.test.class_.is_major_subject]
-            if not major_grades:
+            major = [(ph, units) for ph, units, is_major in graded if is_major]
+            if not major:
                 return None
-            total = sum(g.final_grade for g in major_grades)
-            return round(total / len(major_grades), 2)
-        
+            return round(sum(ph for ph, _ in major) / len(major), 2)
+ 
         return None
-    
+ 
     def get_cumulative_gpa(self, calculation_method='weighted'):
+        """
+        Calculate cumulative GPA across all semesters.
+ 
+        Reads one PH grade per enrolled class (via _get_per_class_ph_grade),
+        never raw test scores. Handles both old and new grading systems.
+        """
+        enrollments = Enrollment.query.filter_by(student_id=self.id).all()
+ 
+        if not enrollments:
+            return None
+ 
+        # Build (ph_grade, units, is_major) for each class that has a grade
+        graded = []
+        for e in enrollments:
+            ph = self._get_per_class_ph_grade(e)
+            if ph is not None:
+                graded.append((ph, e.class_.effective_units, e.class_.is_major_subject))
+ 
+        if not graded:
+            return None
+ 
+        if calculation_method == 'weighted':
+            total_points = sum(ph * units for ph, units, _ in graded)
+            total_units  = sum(units      for _,  units, _ in graded)
+            return round(total_points / total_units, 2) if total_units > 0 else None
+ 
+        elif calculation_method == 'simple':
+            return round(sum(ph for ph, _, _ in graded) / len(graded), 2)
+ 
+        elif calculation_method == 'major_only':
+            major = [(ph, units) for ph, units, is_major in graded if is_major]
+            if not major:
+                return None
+            return round(sum(ph for ph, _ in major) / len(major), 2)
+ 
+        return None
+ 
         """
         Calculate cumulative GPA (all semesters)
         """
@@ -534,24 +626,68 @@ class Enrollment(db.Model):
 
 class Test(db.Model):
     """
-    Test/Assignment - Created by teachers (placeholder for OCR integration)
+    Test — A single gradable activity in a class.
+ 
+    METHOD 2 (Activity-Based):
+        Every quiz, exam, and project is its own Test row.
+        term_tag      → which grading period  ("Prelims", "Midterms", "Finals")
+        component_tag → which formula bucket  ("Quizzes", "Exams", "Projects")
+ 
+        Example rows:
+            title="Prelim Quiz 1",  term_tag="Prelims",  component_tag="Quizzes"
+            title="Prelim Exam",    term_tag="Prelims",  component_tag="Exams"
+            title="Midterm Quiz 1", term_tag="Midterms", component_tag="Quizzes"
+ 
+        The grade formula engine groups tests by (term_tag, component_tag),
+        averages the scores within each group, applies weights, and produces
+        a Philippine grade per term. If any component in the formula has NO
+        tagged tests with scores yet, the term grade shows as INC.
+ 
+    BACKWARD COMPATIBLE:
+        Old tests with term_tag=None are simply ignored by the new engine.
+        They still appear as columns in the grading spreadsheet and can be
+        graded manually via final_grade (the old direct-entry path).
     """
+ 
     __tablename__ = 'test'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
-    
-    title = db.Column(db.String(200), nullable=False)
+ 
+    id         = db.Column(db.Integer, primary_key=True)
+    class_id   = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
+    title      = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    test_date = db.Column(db.Date, nullable=True)
-    
+    test_date  = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+ 
+    # ── Method 2 tags ──────────────────────────────────────────────────────
+    # Nullable so old (untagged) tests keep working without changes.
+    term_tag      = db.Column(db.String(50),  nullable=True, index=True)
+    component_tag = db.Column(db.String(100), nullable=True)
+ 
     # Relationships
-    grades = db.relationship('Grade', backref='test', lazy='dynamic', cascade='all, delete-orphan')
-    
+    grades = db.relationship(
+        'Grade', backref='test', lazy='dynamic', cascade='all, delete-orphan'
+    )
+ 
+    # ── Helpers ────────────────────────────────────────────────────────────
+ 
+    @property
+    def is_tagged(self):
+        """True if this test participates in the Method 2 formula engine."""
+        return bool(self.term_tag and self.component_tag)
+ 
+    @property
+    def display_label(self):
+        """
+        Short label used in the column header tooltip and student grade view.
+        e.g.  "Prelims · Quizzes"
+        """
+        if self.is_tagged:
+            return f"{self.term_tag} · {self.component_tag}"
+        return self.title
+ 
     def __repr__(self):
-        return f'<Test {self.title} - Class:{self.class_id}>'
+        tag = f" [{self.term_tag}/{self.component_tag}]" if self.is_tagged else ""
+        return f'<Test {self.title}{tag} Class:{self.class_id}>'
 
 
 class Grade(db.Model):
@@ -581,6 +717,8 @@ class Grade(db.Model):
     #   "Quizzes": 85
     # }
     component_scores = db.Column(db.Text, nullable=True)
+    raw_score = db.Column(db.Float, nullable=True)
+    max_score = db.Column(db.Float, nullable=True)
     
     # Calculated grade (from formula)
     calculated_percentage = db.Column(db.Float, nullable=True)  # Raw percentage (0-100)
@@ -830,83 +968,223 @@ class Grade(db.Model):
             'items': items
         }
     
-    def calculate_grade(self, class_obj):
+    def term_is_complete(self, class_obj, term_tag):
         """
-        Calculate grade based on class's grading formula
-        SUPPORTS BOTH:
-        - Option B: Multiple items per component with individual max scores
-        - Option A: Single pre-averaged value per component (backward compatibility)
+        Check whether every component in the formula has at least one
+        tagged test with a score for this term.
+    
+        Returns (is_complete: bool, missing: list[str])
+            is_complete — True only when all components have data
+            missing     — list of component names that have no scores yet
+    
+        Called by calculate_grade_v2() to decide INC vs a real grade.
         """
-        component_data = self.get_component_scores()
+        from models import Test, Grade
+    
         formula = class_obj.get_grading_formula()
-        
-        if not component_data or not formula or 'components' not in formula:
-            return
-        
-        total_weighted = 0
-        total_weight = 0
-        
+        if not formula or 'components' not in formula:
+            return False, ['No formula defined']
+    
+        formula_components = [c['name'] for c in formula['components']]
+        missing = []
+    
+        for comp_name in formula_components:
+            # Find all tests for this class, term, component
+            tests_in_group = (
+                Test.query
+                .filter_by(
+                    class_id=class_obj.id,
+                    term_tag=term_tag,
+                    component_tag=comp_name
+                )
+                .all()
+            )
+    
+            if not tests_in_group:
+                # No tests created at all for this component in this term
+                missing.append(comp_name)
+                continue
+    
+            # Check if this student has a score in at least one of those tests
+            has_score = False
+            for t in tests_in_group:
+                g = Grade.query.filter_by(
+                    test_id=t.id,
+                    student_id=self.student_id
+                ).first()
+                if g and g.final_grade is not None:
+                    has_score = True
+                    break
+    
+            if not has_score:
+                missing.append(comp_name)
+    
+        return (len(missing) == 0), missing
+ 
+ 
+    def calculate_grade_v2(self, class_obj, term_tag):
+        """
+        Method 2 formula engine.
+    
+        Groups all tagged tests for (class, term, component), averages the
+        scores within each component group, applies formula weights, and
+        converts the resulting percentage to a Philippine grade.
+    
+        Sets:
+            self.calculated_percentage  — weighted total (0–100)
+            self.calculated_grade       — Philippine grade (1.0–5.0)
+            self.final_grade            — same as calculated_grade (or override)
+    
+        If any formula component has no scores yet, sets everything to None
+        (the spreadsheet cell will show "INC").
+    
+        Returns True if a grade was computed, False if INC.
+        """
+        from models import Test, Grade
+    
+        formula = class_obj.get_grading_formula()
+        if not formula or 'components' not in formula:
+            return False
+    
+        is_complete, missing = self.term_is_complete(class_obj, term_tag)
+        if not is_complete:
+            # Not all components have data — show INC
+            self.calculated_percentage = None
+            self.calculated_grade      = None
+            if not self.is_overridden:
+                self.final_grade = None
+            return False
+    
+        total_weighted = 0.0
+    
         for component in formula['components']:
             comp_name = component['name']
-            weight = component['weight']
-            
+            weight    = component['weight']   # e.g. 40 (meaning 40%)
+    
+            # All tests for this class / term / component
+            tests_in_group = (
+                Test.query
+                .filter_by(
+                    class_id=class_obj.id,
+                    term_tag=term_tag,
+                    component_tag=comp_name
+                )
+                .all()
+            )
+    
+            # Collect percentage scores for this student across all tests in group
+            percentages = []
+            for t in tests_in_group:
+                g = Grade.query.filter_by(
+                    test_id=t.id,
+                    student_id=self.student_id
+                ).first()
+                if g and g.raw_score is not None and g.max_score is not None and g.max_score > 0:
+                    pct = (g.raw_score / g.max_score) * 100
+                    percentages.append(pct)
+                elif g and g.final_grade is not None:
+                    # Fallback: if raw_score not set but final_grade is,
+                    # treat final_grade as a pre-converted percentage placeholder.
+                    # This handles AI-graded papers where only final_grade is written.
+                    # Convert PH grade back to approximate midpoint percentage.
+                    # (This branch should rarely be needed.)
+                    ph_to_pct = {
+                        1.0: 98.5, 1.25: 95.0, 1.5: 92.0, 1.75: 89.0,
+                        2.0: 86.0, 2.25: 83.0, 2.5: 80.0, 2.75: 77.0,
+                        3.0: 75.0, 4.0: 70.0, 5.0: 50.0
+                    }
+                    pct = ph_to_pct.get(round(g.final_grade * 4) / 4, 75.0)
+                    percentages.append(pct)
+    
+            if not percentages:
+                # Should not happen (term_is_complete already checked), but guard anyway
+                self.calculated_percentage = None
+                self.calculated_grade      = None
+                if not self.is_overridden:
+                    self.final_grade = None
+                return False
+    
+            comp_avg = sum(percentages) / len(percentages)
+            total_weighted += comp_avg * (weight / 100)
+    
+        self.calculated_percentage = round(total_weighted, 2)
+        self.calculated_grade = class_obj.convert_to_ph_grade(self.calculated_percentage)
+    
+        if self.is_overridden and self.override_grade:
+            self.final_grade = self.override_grade
+        else:
+            self.final_grade = self.calculated_grade
+    
+        return True
+
+
+    def calculate_grade(self, class_obj):
+        """
+        Unified grade calculation.
+    
+        If the test this grade belongs to is tagged (Method 2), delegates to
+        calculate_grade_v2() which groups all sibling tests by term+component.
+    
+        If the test is untagged (old Method 1 / direct entry), runs the
+        original component_scores logic for backward compatibility.
+        """
+        # ── Method 2: tagged test ─────────────────────────────────────────────
+        if self.test and self.test.is_tagged:
+            return self.calculate_grade_v2(class_obj, self.test.term_tag)
+    
+        # ── Method 1: untagged test (backward compat) ─────────────────────────
+        component_data = self.get_component_scores()
+        formula = class_obj.get_grading_formula()
+    
+        if not component_data or not formula or 'components' not in formula:
+            return
+    
+        total_weighted = 0
+        total_weight   = 0
+    
+        for component in formula['components']:
+            comp_name = component['name']
+            weight    = component['weight']
+    
             if comp_name not in component_data:
-                # Component has no data yet - skip it (incomplete grade is OK)
                 continue
-            
+    
             items = component_data[comp_name]
-            
-            # OPTION B: List of items with individual max scores
+    
             if isinstance(items, list):
                 if len(items) == 0:
-                    # Component exists but has 0 items - skip it (incomplete grade is OK)
                     continue
-                
-                # Calculate average percentage across all items
                 percentages = []
                 for item in items:
                     if not isinstance(item, dict):
                         continue
-                    
-                    score = item.get('score')
+                    score     = item.get('score')
                     max_score = item.get('max')
-                    
-                    # Both score and max are required
                     if score is None or max_score is None or max_score == 0:
                         continue
-                    
-                    percentage = (score / max_score) * 100
-                    percentages.append(percentage)
-                
-                # Calculate average if we have valid percentages
+                    percentages.append((score / max_score) * 100)
                 if percentages:
-                    avg_percentage = sum(percentages) / len(percentages)
-                    total_weighted += (avg_percentage * weight / 100)
-                    total_weight += weight
-            
-            # OPTION A: Single value (backward compatibility)
+                    avg_pct = sum(percentages) / len(percentages)
+                    total_weighted += avg_pct * weight / 100
+                    total_weight   += weight
             else:
                 max_points = component.get('max_points', 100)
-                avg_percentage = (items / max_points) * 100
-                total_weighted += (avg_percentage * weight / 100)
-                total_weight += weight
-        
-        # Calculate final grade
+                avg_pct    = (items / max_points) * 100
+                total_weighted += avg_pct * weight / 100
+                total_weight   += weight
+    
         if total_weight > 0:
             self.calculated_percentage = round(total_weighted, 2)
             self.calculated_grade = class_obj.convert_to_ph_grade(
                 self.calculated_percentage
             )
-            
-            # Handle manual override
             if self.is_overridden and self.override_grade:
                 self.final_grade = self.override_grade
             else:
                 self.final_grade = self.calculated_grade
         else:
-            # No components have data yet - grade is incomplete
             self.calculated_percentage = None
-            self.calculated_grade = None
+            self.calculated_grade      = None
             if not self.is_overridden:
                 self.final_grade = None
     
@@ -932,6 +1210,188 @@ class Grade(db.Model):
         self.override_grade = None
         self.override_reason = None
         self.final_grade = self.calculated_grade
+
+class TestPaperImage(db.Model):
+    """
+    TestPaperImage — Stores uploaded test paper images from the AI pipeline.
+ 
+    Lifecycle of a record:
+        1. 'pending'   → Image uploaded, pipeline running or just finished,
+                         not yet assigned to a student.
+        2. 'uncertain' → Pipeline ran but OCR name confidence is LOW (<85%).
+                         Teacher must manually confirm the suggested student.
+        3. 'assigned'  → Teacher has confirmed which student owns this paper.
+        4. 'error'     → Pipeline crashed on this specific image. The image
+                         file is still saved; teacher can retry or reassign.
+ 
+    Assignment confidence levels (stored in match_confidence):
+        >= 85  → HIGH   — auto-suggested, teacher just clicks confirm
+        50–84  → MEDIUM — flagged as uncertain, teacher must actively pick
+        <  50  → LOW    — treated as unassigned, no suggestion shown
+        None   → OCR returned null/garbage, skip fuzzy match entirely
+    """
+ 
+    __tablename__ = 'test_paper_image'
+ 
+    id = db.Column(db.Integer, primary_key=True)
+ 
+    # ── Foreign Keys ──────────────────────────────────────────────────────────
+    test_id = db.Column(
+        db.Integer,
+        db.ForeignKey('test.id'),
+        nullable=False,
+        index=True
+    )
+    # Null until the professor confirms which student owns this paper
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey('student.id'),
+        nullable=True,
+        index=True
+    )
+    # Teacher who uploaded the batch
+    uploaded_by = db.Column(
+        db.Integer,
+        db.ForeignKey('teacher.id'),
+        nullable=False
+    )
+ 
+    # ── File Storage ──────────────────────────────────────────────────────────
+    # Relative path from your app's UPLOAD_FOLDER, e.g.:
+    #   "test_papers/2025/class_3/test_7/hazel.png"
+    image_path = db.Column(db.String(500), nullable=False)
+ 
+    # Original filename as uploaded by the professor
+    original_filename = db.Column(db.String(255), nullable=False)
+ 
+    # ── Pipeline / OCR Output (raw from your JSON) ────────────────────────────
+    ocr_name  = db.Column(db.String(300), nullable=True)   # raw OCR name field
+    ocr_score = db.Column(db.String(50),  nullable=True)   # e.g. "23/100"
+    ocr_label = db.Column(db.String(500), nullable=True)   # exam label/title
+    ocr_raw_json = db.Column(db.Text,     nullable=True)   # full JSON blob from pipeline
+ 
+    # ── Matching / Assignment ─────────────────────────────────────────────────
+    # 0–100 fuzzy match score. None = OCR returned null/garbage.
+    match_confidence = db.Column(db.Float, nullable=True)
+ 
+    # Best-guess student_id from fuzzy matching (before teacher confirms).
+    # This is the SUGGESTION. student_id above is the CONFIRMED assignment.
+    suggested_student_id = db.Column(
+        db.Integer,
+        db.ForeignKey('student.id'),
+        nullable=True
+    )
+ 
+    # ── Status ────────────────────────────────────────────────────────────────
+    # 'pending' | 'uncertain' | 'assigned' | 'error'
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)
+ 
+    # Human-readable error message if status == 'error'
+    error_message = db.Column(db.Text, nullable=True)
+ 
+    # ── Timestamps ────────────────────────────────────────────────────────────
+    uploaded_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_at  = db.Column(db.DateTime, nullable=True)   # when teacher confirmed
+    processed_at = db.Column(db.DateTime, nullable=True)   # when pipeline finished
+ 
+    # ── Relationships ─────────────────────────────────────────────────────────
+    test              = db.relationship('Test',    backref='paper_images',    foreign_keys=[test_id])
+    student           = db.relationship('Student', backref='paper_images',    foreign_keys=[student_id])
+    suggested_student = db.relationship('Student', foreign_keys=[suggested_student_id])
+    uploader          = db.relationship('Teacher', backref='uploaded_papers', foreign_keys=[uploaded_by])
+ 
+    # ── Helpers ───────────────────────────────────────────────────────────────
+ 
+    @property
+    def confidence_tier(self):
+        """
+        Returns a human-readable tier based on match_confidence.
+        Used by the template to decide which UI badge/colour to show.
+        """
+        if self.match_confidence is None:
+            return 'none'          # OCR returned null/garbage
+        if self.match_confidence >= 85:
+            return 'high'          # green  — auto-suggest, professor confirms
+        if self.match_confidence >= 50:
+            return 'medium'        # yellow — uncertain, professor must pick
+        return 'low'               # red    — no useful guess, treat as unassigned
+ 
+    @property
+    def display_status(self):
+        """Friendly label for the UI."""
+        return {
+            'pending':   '⏳ Pending Review',
+            'uncertain': '⚠️ Uncertain — Verify',
+            'assigned':  '✅ Assigned',
+            'error':     '❌ Pipeline Error',
+        }.get(self.status, self.status)
+ 
+    def assign_to_student(self, student_id):
+        """
+        Confirm assignment to a student.
+        Call this when the teacher clicks 'Confirm' or picks from the dropdown.
+        Raises ValueError if student_id is already assigned to another image
+        in the same test (duplicate-assignment guard).
+        """
+        # Duplicate guard — one paper per student per test
+        existing = TestPaperImage.query.filter(
+            TestPaperImage.test_id    == self.test_id,
+            TestPaperImage.student_id == student_id,
+            TestPaperImage.id         != self.id,         # not this record itself
+            TestPaperImage.status     == 'assigned'
+        ).first()
+ 
+        if existing:
+            raise ValueError(
+                f"Student ID {student_id} already has an assigned paper "
+                f"for this test (image ID {existing.id}: {existing.original_filename})."
+            )
+ 
+        self.student_id  = student_id
+        self.status      = 'assigned'
+        self.assigned_at = datetime.utcnow()
+ 
+    def mark_error(self, message):
+        """Mark this image as failed during pipeline processing."""
+        self.status        = 'error'
+        self.error_message = message
+        self.processed_at  = datetime.utcnow()
+ 
+    def mark_processed(self, ocr_name, ocr_score, ocr_label, raw_json,
+                       suggested_student_id=None, match_confidence=None):
+        """
+        Call this after the pipeline finishes for this image.
+        Sets OCR fields and determines initial status automatically.
+        """
+        self.ocr_name             = ocr_name
+        self.ocr_score            = ocr_score
+        self.ocr_label            = ocr_label
+        self.ocr_raw_json         = raw_json
+        self.suggested_student_id = suggested_student_id
+        self.match_confidence     = match_confidence
+        self.processed_at         = datetime.utcnow()
+ 
+        # Auto-set status from confidence tier
+        tier = self.confidence_tier
+        if tier == 'high':
+            self.status = 'pending'     # still needs teacher confirm, but pre-filled
+        elif tier in ('medium', 'low', 'none'):
+            self.status = 'uncertain'   # explicitly flag for manual review
+ 
+    def get_image_url(self):
+        """
+        Returns the URL path for serving the image.
+        Assumes Flask serves uploaded files under /uploads/<image_path>.
+        Adjust the prefix to match your app.config['UPLOAD_FOLDER'] setup.
+        """
+        return f"/uploads/{self.image_path}"
+ 
+    def __repr__(self):
+        return (
+            f"<TestPaperImage id={self.id} file='{self.original_filename}' "
+            f"status='{self.status}' confidence={self.match_confidence}>"
+        )
+
 
 class SystemSettings(db.Model):
     """
