@@ -130,7 +130,7 @@ def _run_pipeline_on_image(image_path, crop_folder):
         with open(image_path, "rb") as f:
             resp = req.post(
                 ULTRALYTICS_HUB_URL,
-                headers={"Authorization": f"Bearer {ULTRALYTICS_API_KEY}"},
+                headers={"x-api-key": ULTRALYTICS_API_KEY},
                 data=yolo_args,
                 files={"file": f},
                 timeout=30
