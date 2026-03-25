@@ -33,8 +33,10 @@ ocr_bp = Blueprint('ocr', __name__)
 # ── Constants ─────────────────────────────────────────────────────────────────
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 DATALAB_URL        = "https://www.datalab.to/api/v1/convert"
-DATALAB_API_KEY    = os.environ.get('DATALAB_API_KEY', 'api_key')
-YOLO_MODEL_PATH    = os.environ.get('YOLO_MODEL_PATH', 'best_5.pt')
+DATALAB_API_KEY    = os.environ.get('DATALAB_API_KEY')
+YOLO_MODEL_PATH    = os.environ.get('YOLO_MODEL_PATH')
+ULTRALYTICS_API_KEY = os.environ.get('ULTRALYTICS_API_KEY')
+ULTRALYTICS_HUB_URL = "https://predict-69c213e2c6ccc1895d3a-dproatj77a-as.a.run.app/predict"
 CLASS_NAMES        = ['label', 'name', 'score']
 OCR_POLL_INTERVAL  = 2
 OCR_MAX_POLLS      = 150
@@ -106,56 +108,77 @@ def _run_ocr_on_crop(crop_path, field):
         time.sleep(OCR_POLL_INTERVAL)
     return None
 
-_yolo_model = None
-def _get_yolo_model():
-    global _yolo_model
-    if _yolo_model is None:
-        from ultralytics import YOLO
-        if not os.path.exists(YOLO_MODEL_PATH):
-            raise FileNotFoundError(f"YOLO model not found: {YOLO_MODEL_PATH}")
-        _yolo_model = YOLO(YOLO_MODEL_PATH)
-    return _yolo_model
-
 def _run_pipeline_on_image(image_path, crop_folder):
+    """
+    Calls the ULTRALYTICS HUB API instead of running locally.
+    Then crops and sends to Surya OCR.
+    """
+    import requests as req
+    import cv2
+    
     result = {"name": None, "score": None, "label": None, "error": None}
-    try:
-        import cv2
-        model = _get_yolo_model()
-    except ImportError as exc:
-        result["error"] = f"Missing dependency: {exc}"
-        return result
+    
+    # 1. Load image locally for cropping
     image = cv2.imread(image_path)
     if image is None:
-        result["error"] = f"Could not read image"
+        result["error"] = "Could not read image for cropping"
         return result
+
+    # 2. Call Ultralytics Hub API
     try:
-        detections = model.predict(source=image, conf=0.6, verbose=False)
-        r = detections[0]
-        boxes   = r.boxes.xyxy.cpu().numpy()
-        classes = r.boxes.cls.cpu().numpy()
+        yolo_args = {"conf": 0.6, "iou": 0.45, "imgsz": 640}
+        with open(image_path, "rb") as f:
+            resp = req.post(
+                ULTRALYTICS_HUB_URL,
+                headers={"Authorization": f"Bearer {ULTRALYTICS_API_KEY}"},
+                data=yolo_args,
+                files={"file": f},
+                timeout=30
+            )
+        resp.raise_for_status()
+        yolo_data = resp.json()
+        
+        # The Hub response structure is: {'images': [{'results': [...]}]}
+        detections = yolo_data['images'][0]['results']
+        
     except Exception as exc:
-        result["error"] = f"YOLO failed: {exc}"
+        logger.error("Ultralytics Hub API failed: %s", exc)
+        result["error"] = f"Cloud YOLO failed: {exc}"
         return result
-    if len(boxes) == 0:
-        result["error"] = "No sections detected by YOLO"
+
+    if not detections:
+        result["error"] = "No sections detected by Hub model"
         return result
-    import cv2 as _cv2
-    for box, cls in zip(boxes, classes):
-        class_name = CLASS_NAMES[int(cls)]
-        x1, y1, x2, y2 = map(int, box)
+
+    # 3. Process Detections & Run OCR
+    for det in detections:
+        class_name = det['name'] # 'label', 'name', or 'score'
+        if class_name not in CLASS_NAMES:
+            continue
+            
+        box = det['box']
+        # Hub returns a dict: {'x1': ..., 'y1': ..., 'x2': ..., 'y2': ...}
+        x1, y1 = int(box['x1']), int(box['y1'])
+        x2, y2 = int(box['x2']), int(box['y2'])
+        
+        # Ensure coordinates are within image bounds
+        h, w = image.shape[:2]
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+
         crop = image[y1:y2, x1:x2]
         crop_path = os.path.join(crop_folder, f"{uuid.uuid4().hex}_{class_name}.png")
+        
         try:
-            _cv2.imwrite(crop_path, crop)
+            cv2.imwrite(crop_path, crop)
+            # Pass the cropped image to your existing Surya OCR helper
             result[class_name] = _run_ocr_on_crop(crop_path, class_name)
         except Exception as exc:
             logger.error("OCR error for %s: %s", class_name, exc)
         finally:
             if os.path.exists(crop_path):
-                try:
-                    os.remove(crop_path)
-                except OSError:
-                    pass
+                os.remove(crop_path)
+                
     return result
 
 def _write_grade_from_ocr(img_record, student_id, teacher_id):
